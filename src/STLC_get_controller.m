@@ -62,27 +62,34 @@ for i = 1:numel(stl_list)
         case 'robust'
             [Fphi, Pphi] = STL2MILP_robust(phi, 2*L, ts, var,M); 
         case 'interval'
-            [Fphi, Pphi1, Pphi2] = STL2MILP_robust_interval(phi, 2*L, ts, var,M); 
+            [Fphi, Pphilow, Pphiup] = STL2MILP_robust_interval(phi, 2*L, ts, var,M); 
     end
     Fstl = [Fstl Fphi];
-    for j = 1:min(L, size(Pphi,2))
-        switch enc
-            case 'boolean'
-                Fstl = [Fstl Pphi(:,j) == 1]; % TODO this is specific to alw (phi), whatabout ev, until...
-            case 'robust'
-                Fstl = [Fstl Pphi(:,j)>= p(j)]; % TODO this is specific to alw (phi), whatabout ev, until...
-            case 'interval'
-                Fstl = [Fstl Pphi2(:,j)>= p(j)]; % TODO this is specific to alw (phi), whatabout ev, until...
+    
+    % add constraints to enforce satisfaction
+    switch enc
+        case 'boolean'
+            for j = 1:min(L, size(Pphi,2))
+                Fstl = [Fstl Pphi(:,j) == 1]; % TODO this is specific to alw (phi), what about ev, until...
+            end
+        case 'robust'
+            for j = 1:min(L, size(Pphi,2))
+                Fstl = [Fstl Pphi(:,j)>= p(j)]; % TODO this is specific to alw (phi), what about ev, until...
+            end
+        case 'interval'
+            for j = 1:min(L, size(Pphilow,2))
+                Fstl = [Fstl Pphiup(:,j)>= p(j)]; % TODO this is specific to alw (phi), what about ev, until...
                 for k=1:2*L
                     if k==1
-                        Fstl = [Fstl, Pphi1(:,1)==Pphi2(:,2)];
+                        Fstl = [Fstl, Pphilow(:,1)==Pphiup(:,1)];
                     else
                         % done values (history)
                         % if k is past (done(k)==1), upper and lower bounds are equal
-                        Fstl = [Fstl, Pphi1(:,k) - (1-done(k-1))*M <=  Pphi2(:,k) <= Pphi1(:,k) + (1-done(k-1))*M];
+                        Fstl = [Fstl, Pphilow(:,k) - (1-done(k-1))*M <=  Pphiup(:,k) <= Pphilow(:,k) + (1-done(k-1))*M];
                     end
                 end
-        end
+            end
+        
     end
 end
 
@@ -149,6 +156,11 @@ for k=1:2*L-1
         Fdyn = [Fdyn, Y(:,k) == Cd*X(:,k)+ Ddu*U(:,k) + Ddw *W(:,k)];
 end
 
+options = Sys.solver_options;
+param_controller = {done, p, Xdone, Udone, W};
+
+output_controller =  {U,X,Pphi};
+
 %% Objective function
 switch enc
     case 'boolean'
@@ -156,13 +168,9 @@ switch enc
     case 'robust'
         obj = get_objective(Sys,X,Y,U,W, Pphi(:,L), Sys.lambda_rho);
     case 'interval'
-        obj = get_objective(Sys,X,Y,U,W, Pphi1(:,L), Sys.lambda_rho);
+        obj = get_objective(Sys,X,Y,U,W, Pphilow(:,L), Sys.lambda_rho);
+        output_controller =  {U,X,Pphilow,Pphiup};
 end
-
-options = Sys.solver_options;
-param_controller = {done, p, Xdone, Udone, W};
-output_controller =  {U,X,Pphi};
-
 
 controller = optimizer([Fdyn, Fstl, Fu],obj,options,param_controller, output_controller);
 

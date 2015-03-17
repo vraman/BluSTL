@@ -1,4 +1,4 @@
-function [F,P1,P2] = STL2MILP_robust_interval(phi,k,ts,var,M)
+function [F,Plow,Pup] = STL2MILP_robust_interval(phi,k,ts,var,M)
 % STL2MILP_robust_interval  constructs MILP constraints in YALMIP that compute
 %                           the robust interval of satisfaction, i.e. the 
 %                           lower and upper bounds on the robustness of 
@@ -15,7 +15,7 @@ function [F,P1,P2] = STL2MILP_robust_interval(phi,k,ts,var,M)
 % Output: 
 %       F:  YALMIP constraints
 %       P:  a struct containing YALMIP decision variables representing 
-%           upper (P1) and lower (P2) bounds on quantitative satisfaction 
+%           upper (Plow) and lower (Pup) bounds on quantitative satisfaction 
 %           of phi over each time step from 1 to k 
 %
 % :copyright: TBD
@@ -28,8 +28,8 @@ function [F,P1,P2] = STL2MILP_robust_interval(phi,k,ts,var,M)
     end;
         
     F = [];
-    P1 = [];
-    P2 = [];
+    Plow = [];
+    Pup = [];
     
     if ischar(phi.interval)
         interval = [str2num(phi.interval)];
@@ -53,63 +53,63 @@ function [F,P1,P2] = STL2MILP_robust_interval(phi,k,ts,var,M)
     switch (phi.type)
         
         case 'predicate'
-            [F,P1,P2] = pred(phi.st,k,var,M);
+            [F,Plow,Pup] = pred(phi.st,k,var,M);
                      
         case 'not'
             [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,k,ts, var,M);
             [Fnot, Pnot1,Pnot2] = not(Prest1,Prest2);
             F = [F, Fnot, Frest];
-            P1 = Pnot1;
-            P2 = Pnot2;
+            Plow = Pnot1;
+            Pup = Pnot2;
 
         case 'or'
             [Fdis1,Pdis11,Pdis12] = STL2MILP_robust_interval(phi.phi1,k,ts, var,M);
             [Fdis2,Pdis21,Pdis22] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
             [For, Por1,Por2] = or([Pdis11;Pdis21],[Pdis12;Pdis22],M);
             F = [F, For, Fdis1, Fdis2];
-            P1 = Por1;
-            P2 = Por2;
+            Plow = Por1;
+            Pup = Por2;
 
         case 'and'
             [Fcon1,Pcon11,Pcon12] = STL2MILP_robust_interval(phi.phi1,k,ts, var,M);
             [Fcon2,Pcon21,Pcon22] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
             [Fand,Pand1,Pand2] = and([Pcon11;Pcon21],[Pcon12;Pcon22],M);
             F = [F, Fand, Fcon1, Fcon2];
-            P1 = Pand1;
-            P2 = Pand2;
+            Plow = Pand1;
+            Pup = Pand2;
 
         case '=>'
             [Fant,Pant1,Pant2] = STL2MILP_robust_interval(phi.phi1,k, ts,var,M);
             [Fcons,Pcons1,Pcons2] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
             [Fnotant,Pnotant1,Pnotant2] = not(Pant1,Pant2);
-            [Fimp,Pimp1,Pimp2] = or([Pnotant1;Pcons1],[Pnotant2;Pcons2],M);
+            [Fimp,PimPlow,PimPup] = or([Pnotant1;Pcons1],[Pnotant2;Pcons2],M);
             F = [F, Fant, Fnotant, Fcons, Fimp];
-            P1 = Pimp1;
-            P2 = Pimp2;
+            Plow = PimPlow;
+            Pup = PimPup;
             
         case 'always'
             [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,k, ts, var,M);
             [Falw,Palw1,Palw2] = always(Prest1,Prest2,a,b,k,M);
             F = [F, Falw];
             F = [F, Frest];
-            P1 = Palw1;
-            P2 = Palw2;
+            Plow = Palw1;
+            Pup = Palw2;
 
         case 'eventually'
             [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,k, ts, var,M);
             [Fev,Pev1,Pev2] = eventually(Prest1,Prest2,a,b,k,M);
             F = [F, Fev];
             F = [F, Frest];
-            P1 = Pev1;
-            P2 = Pev2;
+            Plow = Pev1;
+            Pup = Pev2;
           
         case 'until'
-            [Fp,Pp1,Pp2] = STL2MILP_robust_interval(phi.phi1,k, ts, var,M);
+            [Fp,PPlow,PPup] = STL2MILP_robust_interval(phi.phi1,k, ts, var,M);
             [Fq,Pq1,Pq2] = STL2MILP_robust_interval(phi.phi2,k, ts, var,M);
-            [Funtil,Puntil1,Puntil2] = until(Pp1,Pp2,Pq1,Pq2,a,b,k,M);
+            [Funtil,Puntil1,Puntil2] = until(PPlow,PPup,Pq1,Pq2,a,b,k,M);
             F = [F,Funtil,Fp,Fq];
-            P1 = Puntil1;
-            P2 = Puntil2;
+            Plow = Puntil1;
+            Pup = Puntil2;
     end   
 end
 
@@ -138,8 +138,7 @@ function [F,z1,z2] = pred(st,k,var,M)
          
     F = [];
     
-    zAll1 = [];
-    zAll2 = [];
+    zAll = [];
     
     for l=1:k
         % the below conditional statements allow specifications to refer to
@@ -158,17 +157,18 @@ function [F,z1,z2] = pred(st,k,var,M)
         t_st = regexprep(t_st,'t\)',[num2str(l) '\)']);
         
         try %upper and lower bounds
-            val = eval(t_st);
+            z = eval(t_st);
         end
         
-        z1Temp = sdpvar(size(val));
-        z2Temp = sdpvar(size(val));
-        F = [F, z1Temp >= val];
-        F = [F, z2Temp <= val];
-        zAll1 = [zAll1,z1Temp];
-        zAll2 = [zAll2,z2Temp];
-        
-        
+%         z1Temp = sdpvar(size(val));
+%         z2Temp = sdpvar(size(val));
+%         F = [F, z1Temp >= val];
+%         F = [F, z2Temp <= val];
+%         zAll1 = [zAll1,z1Temp];
+%         zAll2 = [zAll2,z2Temp];
+
+        zAll = [zAll, z];
+
     end
     
     
@@ -176,67 +176,78 @@ function [F,z1,z2] = pred(st,k,var,M)
     z1 = sdpvar(1,k);
     z2 = sdpvar(1,k);
     
-    size(zAll1)
-    for i=1:k:size(zAll1,2)
-        [Fnew, z1(i), z2(i)] = and(zAll1(:,i),zAll2(:,i),M);
+    for i=1:k
+        [Fnew, z1(:,i), z2(:,i)] = and(zAll(:,i),zAll(:,i),M);
         F = [F, Fnew];
     end
 end
 
 % BOOLEAN OPERATIONS
 
-function [F,P1,P2] = and(p_list1,p_list2,M)
-    [F,P1,P2] = min_r(p_list1,p_list2,M);
+function [F,Plow,Pup] = and(p_list1,p_list2,M)
+    [F,Plow,Pup] = min_r(p_list1,p_list2,M);
 end
 
 
-function [F,P1,P2] = or(p_list1,p_list2,M)
-     [F,P1,P2] = max_r(p_list1,p_list2,M);
+function [F,Plow,Pup] = or(p_list1,p_list2,M)
+     [F,Plow,Pup] = max_r(p_list1,p_list2,M);
 end
 
 
-function [F,P1,P2] = not(p_list1,p_list2)
+function [F,Plow,Pup] = not(p_list1,p_list2)
     k = size(p_list1,2);
     m = size(p_list1,1);
     assert( m == 1 )
-    P1 = sdpvar(1,k);
-    P2 = sdpvar(1,k);
-    F = [P1 == -p_list2, P2 == -p_list1];
+    Plow = sdpvar(1,k);
+    Pup = sdpvar(1,k);
+    F = [Plow == -p_list2, Pup == -p_list1];
 end
 
 
 
 % TEMPORAL OPERATIONS
 
-function [F,P_alw1,P_alw2] = always(P1,P2,a,b, k,M)
+function [F,P_alw1,P_alw2] = always(Plow,Pup,a,b, k,M)
     F = [];
     P_alw1 = sdpvar(1,k);
     P_alw2 = sdpvar(1,k);
     
     for i = 1:k
-        [ia, ib] = getIndices(i,a,b,k);
-        [F0,P01,P02] = and(P1(ia:ib)',P2(ia:ib)',M);
-        F = [F;F0,P_alw1(i)==P01,P_alw2(i)==P02];
+        [ia, ib, over] = getIndices(i,a,b,k);
+        [F0,P0low,P0up] = and(Plow(ia:ib)',Pup(ia:ib)',M);
+        if over
+            F0 = [F0, P_alw1(i) == -M];
+        else
+            F0 = [F0, P_alw1(i)==P0low];
+        end
+    
+        F = [F;F0,P_alw2(i)==P0up];
     end
     
 end
 
 
-function [F,P_ev1,P_ev2] = eventually(P1,P2,a,b, k,M)
+function [F,P_ev1,P_ev2] = eventually(Plow,Pup,a,b, k,M)
     F = [];
     P_ev1 = sdpvar(1,k);
     P_ev2 = sdpvar(1,k);
     
     for i = 1:k
-        [ia, ib] = getIndices(i,a,b,k);
-        [F0,P01,P02] = or(P1(ia:ib)',P2(ia:ib)',M);
-        F = [F;F0,P_ev1(i)==P01,P_ev2(i)==P02];
+        [ia, ib, over] = getIndices(i,a,b,k);
+        [F0,P0low,P0up] = or(Plow(ia:ib)',Pup(ia:ib)',M);
+        if over
+            F0 = [F0, P_ev2(i) == M];
+        else
+            F0 = [F0, P_ev2(i)==P0up];
+        end
+    
+        F = [F;F0,P_ev1(i)==P0low];
     end
     
 end
 
 
-function [F,P_until1,P_until2] = until(Pp1,Pp2,Pq1,Pq2,a,b,k,M)
+function [F,P_until1,P_until2] = until(PPlow,PPup,Pq1,Pq2,a,b,k,M)
     
     F = [];
     P_until1 = sdpvar(1,k);
@@ -245,15 +256,15 @@ function [F,P_until1,P_until2] = until(Pp1,Pp2,Pq1,Pq2,a,b,k,M)
     for i = 1:k
         [ia, ib] = getIndices(i,a,b,k);
         F0 = []; 
-        P01 = [];
-        P02 = [];
+        P0low = [];
+        P0up = [];
         for j = ia:ib
-            [F1,P11,P12] = until_mins(i,j,Pp1,Pp2,Pq1,Pq2,M);
+            [F1,Plow1,Plow2] = until_mins(i,j,PPlow,PPup,Pq1,Pq2,M);
             F0 = [F0, F1];
-            P01 = [P01,P11];
-            P02 = [P02,P12];
+            P0low = [P0low,Plow1];
+            P0up = [P0up,Plow2];
         end
-        [F4,P41,P42] = max_r(P01,P02);
+        [F4,P41,P42] = max_r(P0low,P0up);
         F = [F;F0,F4,P_until1(i)==P41,P_until2(i)==P42];
     end
     
@@ -262,66 +273,71 @@ end
 
 % UTILITY FUNCTIONS
 
-function [F,P1,P2] = min_r(p_list1,p_list2,M)
+function [F,Plow,Pup] = min_r(p_list1,p_list2,M)
     
     k = size(p_list1,2);
     m = size(p_list1,1);
     
-    P1 = sdpvar(1,k);
+    Plow = sdpvar(1,k);
     z1 = binvar(m,k);
     
-    P2 = sdpvar(1,k);
+    Pup = sdpvar(1,k);
     z2 = binvar(m,k);
      
     F = [sum(z1,1) == ones(1,k),sum(z2,1) == ones(1,k)];
     for t=1:k
         for i=1:m
-            F = [F, P1(t) <= p_list1(i,t)];     
-            F = [F, p_list1(i,t) - (1-z1(i,t))*M <= P1(t) <= p_list1(i,t) + (1-z1(i,t))*M];
-            F = [F, P1(t) <= p_list1(i,t)];     
-            F = [F, p_list1(i,t) - (1-z1(i,t))*M <= P1(t) <= p_list1(i,t) + (1-z1(i,t))*M];
+            F = [F, Plow(t) <= p_list1(i,t)];     
+            F = [F, p_list1(i,t) - (1-z1(i,t))*M <= Plow(t) <= p_list1(i,t) + (1-z1(i,t))*M];
+            F = [F, Plow(t) <= p_list1(i,t)];     
+            F = [F, p_list1(i,t) - (1-z1(i,t))*M <= Plow(t) <= p_list1(i,t) + (1-z1(i,t))*M];
         
-            F = [F, P2(t) <= p_list2(i,t)];     
-            F = [F, p_list2(i,t) - (1-z2(i,t))*M <= P2(t) <= p_list2(i,t) + (1-z2(i,t))*M];
-            F = [F, P2(t) <= p_list2(i,t)];     
-            F = [F, p_list2(i,t) - (1-z2(i,t))*M <= P2(t) <= p_list2(i,t) + (1-z2(i,t))*M];
+            F = [F, Pup(t) <= p_list2(i,t)];     
+            F = [F, p_list2(i,t) - (1-z2(i,t))*M <= Pup(t) <= p_list2(i,t) + (1-z2(i,t))*M];
+            F = [F, Pup(t) <= p_list2(i,t)];     
+            F = [F, p_list2(i,t) - (1-z2(i,t))*M <= Pup(t) <= p_list2(i,t) + (1-z2(i,t))*M];
         
         end
     end
 end
 
-function [F,P1,P2] = max_r(p_list1,p_list2,M)
+function [F,Plow,Pup] = max_r(p_list1,p_list2,M)
 
     k = size(p_list1,2);
     m = size(p_list1,1);
     
-    P1 = sdpvar(1,k);
+    Plow = sdpvar(1,k);
     z1 = binvar(m,k);
     
-    P2 = sdpvar(1,k);
+    Pup = sdpvar(1,k);
     z2 = binvar(m,k);
     
     F = [sum(z1,1) == ones(1,k),sum(z2,1) == ones(1,k)];
     for t=1:k
         for i=1:m
-            F = [F, P1(t) >= p_list1(i,t)];     
-            F = [F, p_list1(i,t) - (1-z1(i,t))*M <= P1(t) <= p_list1(i,t) + (1-z1(i,t))*M];
+            F = [F, Plow(t) >= p_list1(i,t)];     
+            F = [F, p_list1(i,t) - (1-z1(i,t))*M <= Plow(t) <= p_list1(i,t) + (1-z1(i,t))*M];
             
-            F = [F, P2(t) >= p_list2(i,t)];     
-            F = [F, p_list2(i,t) - (1-z2(i,t))*M <= P2(t) <= p_list2(i,t) + (1-z2(i,t))*M];        
+            F = [F, Pup(t) >= p_list2(i,t)];     
+            F = [F, p_list2(i,t) - (1-z2(i,t))*M <= Pup(t) <= p_list2(i,t) + (1-z2(i,t))*M];        
         end
     end
 end
 
-function [F,P1,P2] = until_mins(i,j,Pp1,Pp2,Pq1,Pq2,M)
-    [F0,P01,P02] = min_r(Pp1(i:j)',Pp2(i:j)',M);
-    [F1,P1,P2] = min_r([Pq1(j),P01],[Pq2(j),P02],M);
+function [F,Plow,Pup] = until_mins(i,j,PPlow,PPup,Pq1,Pq2,M)
+    [F0,P0low,P0up] = min_r(PPlow(i:j)',PPup(i:j)',M);
+    [F1,Plow,Pup] = min_r([Pq1(j),P0low],[Pq2(j),P0up],M);
     F = [F0,F1];
 end
 
-function [ia, ib] = getIndices(i,a,b,k)
+function [ia, ib, over] = getIndices(i,a,b,k)
     ia = min(k,i+a);
     ib = min(k,i+b);
+    if k < i + b
+        over = 1;
+    else
+        over = 0;
+    end
 end
 
 
