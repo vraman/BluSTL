@@ -79,15 +79,6 @@ for i = 1:numel(stl_list)
         case 'interval'
             for j = 1:min(L, size(Pphilow,2))
                 Fstl = [Fstl Pphiup(:,j)>= p(j)]; % TODO this is specific to alw (phi), what about ev, until...
-                for k=1:2*L
-                    if k==1
-                        Fstl = [Fstl, Pphilow(:,1)==Pphiup(:,1)];
-                    else
-                        % done values (history)
-                        % if k is past (done(k)==1), upper and lower bounds are equal
-                        Fstl = [Fstl, Pphilow(:,k) - (1-done(k-1))*M <=  Pphiup(:,k) <= Pphilow(:,k) + (1-done(k-1))*M];
-                    end
-                end
             end
         
     end
