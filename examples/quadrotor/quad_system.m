@@ -73,7 +73,7 @@ classdef quad_system <STLC_lti
             % Time
             QSys.time = 0:1:100; % time for the dynamics
             QSys.ts=2; % sampling time for controller
-            QSys.L=4;  % horizon (# of steps)
+            QSys.L=10;  % horizon (# of steps)
             QSys.nb_stages=1; % repeats time
 
             QSys.max_react_iter=100;
@@ -90,13 +90,13 @@ classdef quad_system <STLC_lti
             
             %% STL formula
             %            QSys.stl_list{1} = 'alw_[0,Inf] ( abs(x1(t))<.1 and abs(x2(t))<.1 and abs(x3(t)-1)<.1 )';
-            %QuadSys.stl_list{1} = '( x3(t)<1  =>  ev_[0, 10] (x3(t)>10)) and ((x3(t)>10)  =>  ev_[0, 10] (x3(t)<1))';
-            %QuadSys.stl_list{2} = '( x3(t)<11 and x3(t)>0)';
+            QSys.stl_list{1} = '( x3(t)<1  =>  ev_[0, Inf] (x3(t)>10)) and ((x3(t)>10)  =>  ev_[0, Inf] (x3(t)<1))';
+            QSys.stl_list{2} = '( x3(t)<11 and x3(t)>0)';
 
-
-            QSys.stl_list = {'ev_[0,50] ((X(1:2,t) < [9;9]) and (X(1:2,t) > [8;8]))', ...
-                'ev_[0,50] ((X(1:2,t) < [1;1]) and (X(1:2,t) > [0.5;0.5]))', ...
-                'ev_[0,50] ((X(1:2,t) < [4;2]) and (X(1:2,t) > [3;1]))'};
+% 
+%             QSys.stl_list = {'ev_[0,50] ((X(1:2,t) < [9;9]) and (X(1:2,t) > [8;8]))', ...
+%                 'ev_[0,50] ((X(1:2,t) < [1;1]) and (X(1:2,t) > [0.5;0.5]))', ...
+%                 'ev_[0,50] ((X(1:2,t) < [4;2]) and (X(1:2,t) > [3;1]))'};
 
 
             %           QSys.stl_list{3} = 'ev_[0, 10] (  x1(t)>10 ) and ev_[10, 20] (x1(t)<1)';
@@ -119,6 +119,11 @@ classdef quad_system <STLC_lti
 
         end
 
+        function controller = get_controller(Sys)
+            Sys.sysd = c2d(Sys.sys, Sys.ts);
+            controller = STLC_get_controller(Sys,'interval');
+        end
+        
         function QSys = update_plot(QSys)
             QSys = quad_plot(QSys);
         end
