@@ -206,7 +206,7 @@ classdef STLC_lti
         % default objective function r is the robust sat. and wr a weight 
         function obj = get_objective(Sys, X, Y, U,W, rho,wr)
             switch nargin
-                case 4
+                case {4,5}
                     obj = sum(sum(abs(U))); % minimize U
                 case 6
                     obj = sum(sum(abs(U)))-sum(rho); % minimize U penalized by r 
