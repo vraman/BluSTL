@@ -40,12 +40,12 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,k,ts,var,M)
     a = interval(1);
     b = interval(2);
     
-    if a == Inf
-        a = k*ts;
-    end
-    if b == Inf
-        b = k*ts;
-    end
+%     if a == Inf
+%         a = k*ts;
+%     end
+%     if b == Inf
+%         b = k*ts;
+%     end
     
     a = max([0 floor(a/ts)-1]); 
     b = ceil(b/ts)-1; 
@@ -207,41 +207,41 @@ end
 
 % TEMPORAL OPERATIONS
 
-function [F,P_alw1,P_alw2] = always(Plow,Pup,a,b, k,M)
+function [F,P_alwlow,P_alwup] = always(Plow,Pup,a,b, k,M)
     F = [];
-    P_alw1 = sdpvar(1,k);
-    P_alw2 = sdpvar(1,k);
+    P_alwlow = sdpvar(1,k);
+    P_alwup = sdpvar(1,k);
     
     for i = 1:k
         [ia, ib, over] = getIndices(i,a,b,k);
         [F0,P0low,P0up] = and(Plow(ia:ib)',Pup(ia:ib)',M);
         if over
-            F0 = [F0, P_alw1(i) == -M];
+            F0 = [F0, P_alwlow(i) == -M];
         else
-            F0 = [F0, P_alw1(i)==P0low];
+            F0 = [F0, P_alwlow(i)==P0low];
         end
     
-        F = [F;F0,P_alw2(i)==P0up];
+        F = [F;F0,P_alwup(i)==P0up];
     end
     
 end
 
 
-function [F,P_ev1,P_ev2] = eventually(Plow,Pup,a,b, k,M)
+function [F,P_evlow,P_evup] = eventually(Plow,Pup,a,b, k,M)
     F = [];
-    P_ev1 = sdpvar(1,k);
-    P_ev2 = sdpvar(1,k);
+    P_evlow = sdpvar(1,k);
+    P_evup = sdpvar(1,k);
     
     for i = 1:k
         [ia, ib, over] = getIndices(i,a,b,k);
         [F0,P0low,P0up] = or(Plow(ia:ib)',Pup(ia:ib)',M);
         if over
-            F0 = [F0, P_ev2(i) == M];
+            F0 = [F0, P_evup(i) == M];
         else
-            F0 = [F0, P_ev2(i)==P0up];
+            F0 = [F0, P_evup(i)==P0up];
         end
     
-        F = [F;F0,P_ev1(i)==P0low];
+        F = [F;F0,P_evlow(i)==P0low];
     end
     
 end
