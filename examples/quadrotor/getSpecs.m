@@ -1,4 +1,4 @@
-function [inits] = getSpecs( inits, dim, ex)
+function [stl_list] = getSpecs( inits, dim, ex)
 
 %% Create the environment
 
@@ -93,7 +93,7 @@ end
 %fGoal={};
 
 %% STL formula
-inits.stl_list = [fPoly, fSafe, fGoal{:}];
+stl_list = [fPoly, fSafe, fGoal{:}];
 
 end
 

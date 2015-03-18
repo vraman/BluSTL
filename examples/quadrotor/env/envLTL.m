@@ -106,6 +106,22 @@ elseif 5 == ex
     env.AP.d = getPoly([7,8, 3,4, 4,6]);
     env.AP.e = getPoly([4,5, 6,8, 2,3]);
     
+elseif 6 == ex
+    xmin = 0;   xmax = 10;
+    ymin = 0;   ymax = 10;
+    zmin = 0;   zmax = 10;
+    arena = [xmin, xmax, ymin, ymax, zmin, zmax];
+    workspace = getPoly(arena);
+
+    % Create labled regions
+    obs = [ getPoly([2,4, 5,7, 2,6], e)];
+    env.work.unsafe = obs;
+    env.work.safe = regiondiff(workspace, obs);   
+
+    env.AP.a = getPoly([8,9,8,9, 0,8]);
+    env.AP.b = getPoly([0.5,1,0.5,1,0,8]);
+    env.AP.c = getPoly([3,4,1,2,0,8]);
+    
 else
     error('Invalid example number.');
 end
