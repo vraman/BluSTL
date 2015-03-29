@@ -154,9 +154,6 @@ end
             %disp(['Yalmip: ' yalmiperror(errorflag1)])
             Upred = sol_control{1};
             Xpred = sol_control{2};
-            disp(['Plow' sol_control{3}]);
-            disp(['Pup'  sol_control{4}]);
-            
         elseif (errorflag1==1 || errorflag1==15||errorflag1==12)  % some error, infeasibility or else
             disp(['Yalmip error (disturbance too bad ?): ' yalmiperror(errorflag1)]); % probably there is no controller for this w
             StopRequest=1;
