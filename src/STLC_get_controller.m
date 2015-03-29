@@ -39,6 +39,10 @@ Xdone = sdpvar(nx, 2*L);
 
 %% STL formula
 Fstl = [];
+Pstl = [];
+Pstllow = [];
+Pstlup = [];
+
 varStd = struct('X',X,'Y', Y,'U',U, 'W', W);
 
 if isstruct(Sys.var)
@@ -53,16 +57,19 @@ end
 stl_list= STLC_parse_stl_labels(Sys);
 M = Sys.bigM;
 
-Pphi=sdpvar(1,1);
 for i = 1:numel(stl_list)
     phi = STLformula('phi', stl_list{i});
     switch enc
         case 'boolean'
             [Fphi, Pphi] = STL2MILP_boolean(phi, 2*L, ts, var,M); 
+            Pstl = [Pstl; Pphi];
         case 'robust'
-            [Fphi, Pphi] = STL2MILP_robust(phi, 2*L, ts, var,M); 
+            [Fphi, Pphi] = STL2MILP_robust(phi, 2*L, ts, var,M);
+            Pstl = [Pstl; Pphi];
         case 'interval'
             [Fphi, Pphilow, Pphiup] = STL2MILP_robust_interval(phi, 2*L, ts, var,M); 
+            Pstllow = [Pstllow; Pphilow];
+            Pstlup = [Pstlup; Pphiup];
     end
     Fstl = [Fstl Fphi];
     
@@ -150,17 +157,21 @@ end
 options = Sys.solver_options;
 param_controller = {done, p, Xdone, Udone, W};
 
-output_controller =  {U,X,Pphi};
+output_controller =  {U,X,Pstl};
+
+if numel(stl_list) == 0
+    Pstl = sdpvar(1,1);
+end
 
 %% Objective function
 switch enc
     case 'boolean'
         obj = get_objective(Sys,X,Y,U,W);
     case 'robust'
-        obj = get_objective(Sys,X,Y,U,W, Pphi(:,L), Sys.lambda_rho);
+        obj = get_objective(Sys,X,Y,U,W, Pstl(:,L), Sys.lambda_rho);
     case 'interval'
-        obj = get_objective(Sys,X,Y,U,W, Pphilow(:,L), Sys.lambda_rho);
-        output_controller =  {U,X,Pphilow,Pphiup};
+        obj = get_objective(Sys,X,Y,U,W, Pstllow(:,L), Sys.lambda_rho);
+        output_controller =  {U,X,Pstllow,Pstlup};
 end
 
 controller = optimizer([Fdyn, Fstl, Fu],obj,options,param_controller, output_controller);
