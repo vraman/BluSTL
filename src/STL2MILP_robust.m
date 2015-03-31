@@ -123,7 +123,7 @@ function [F,z] = pred(st,k,var,M)
          
     F = [];
     
-    zAll = [];
+    z = [];
     for l=1:k
         t_st = st;
         t_st = regexprep(t_st,'t\)',[num2str(l) '\)']);
@@ -132,15 +132,19 @@ function [F,z] = pred(st,k,var,M)
         try 
             zl = eval(t_st);
         end
-        zAll = [zAll,zl];
+        z = [z,zl];
     end
     
+    % ALEX: I don't like/understand the following commented lines. 
+    %       it sure creates lots of constraints where none are needed.
+           
+    
     % take the and over all dimension for multi-dimensional signals
-    z = sdpvar(1,k);
-    for i=1:k
-        [Fnew, z(:,i)] = and(zAll(:,i),M);
-        F = [F, Fnew];
-    end
+    %z = sdpvar(1,k);
+    %for i=1:k
+    %    [Fnew, z(:,i)] = and(zAll(:,i),M);
+    %    F = [F, Fnew];
+    %end
 end
 
 % BOOLEAN OPERATIONS

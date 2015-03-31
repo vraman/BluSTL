@@ -171,7 +171,7 @@ switch enc
         obj = get_objective(Sys,X,Y,U,W, Pstl(:,L), Sys.lambda_rho);
     case 'interval'
         obj = get_objective(Sys,X,Y,U,W, Pstllow(:,L), Sys.lambda_rho);
-        output_controller =  {U,X,Pstllow,Pstlup};
+        output_controller =  {U,X,[Pstllow;Pstlup]};
 end
 
 controller = optimizer([Fdyn, Fstl, Fu],obj,options,param_controller, output_controller);

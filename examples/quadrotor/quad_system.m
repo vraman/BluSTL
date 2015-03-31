@@ -58,8 +58,8 @@ classdef quad_system <STLC_lti
             QS = QS@STLC_lti(A,Bu,C,[]);
             
             % env
-            ex=3;
-            QS.env = envLTL(ex);
+          %  ex=3;
+          %  QS.env = envLTL(ex);
                 
             % Init controller stuff
             
@@ -71,8 +71,8 @@ classdef quad_system <STLC_lti
         function QSys = init_control(QSys)
             %% Controller Initialisation
             % Time
-            QSys.time = 0:1:100; % time for the dynamics
-            QSys.ts=2; % sampling time for controller
+            QSys.time = 0:.5:100; % time for the dynamics
+            QSys.ts=1; % sampling time for controller
             QSys.L=10;  % horizon (# of steps)
             QSys.nb_stages=2; % repeats time
 
@@ -81,17 +81,21 @@ classdef quad_system <STLC_lti
             QSys.lambda_rho = 1000;
             
             % Input constraints
-            QSys.u_ub(:)=10;
-            QSys.u_lb(:)= -10;
+            QSys.u_ub(:)=1;
+            QSys.u_lb(:)= -1;
             
             % Initial state
             QSys.x0 = [0.1; 0.1; 0.1; zeros(7,1)];
             
             
             %% STL formula
-            %QSys.stl_list{1} = 'alw_[0,Inf] ( abs(x1(t))<.1 and abs(x2(t))<.1 and abs(x3(t)-1)<.1 )';
-            QSys.stl_list{1} = '( ( x3(t)<1  =>  ev_[0, 10] (x3(t)>10)) and ((x3(t)>10)  =>  ev_[0, 10] (x3(t)<1)))';
-            QSys.stl_list{2} = '( x3(t)<11 and x3(t)>0)';
+             %QSys.stl_list{1} = 'alw_[0,Inf] ( abs(x1(t))<.1 and abs(x2(t))<.1 and abs(x3(t)-1)<.1 )';
+
+             %             QSys.stl_list{1} = 'alw (x3(t)<1  =>  ev_[0, 10] (x3(t)>10)) and ((x3(t)>10)  =>  ev_[0, 10] (x3(t)<2))';
+             QSys.stl_list{1} = 'alw (x3(t)<11 and x3(t)>0)';
+%             QSys.stl_list{2} = '(ev_[0, 10] (x3(t)>10))';
+             QSys.stl_list{2} = 'alw ((x3(t)<1)  => (ev_[0, 10] (x3(t)>10)))';
+             QSys.stl_list{3} = 'alw ((x3(t)>10) => (ev_[0, 10] (x3(t)<1)))';
 
 
 %             QSys.stl_list = {'ev_[0,10] ((X(1:2,t) < [9;9]) and (X(1:2,t) > [8;8]))', ...
@@ -103,13 +107,15 @@ classdef quad_system <STLC_lti
             %           QSys.stl_list{4} = 'alw_[0,Inf] ( x1(t)<11 and x1(t)>0)';
             
             %% Plotting
-            QSys.plot_x = [1:3];
+            QSys.plot_x = [3];
+            QSys.plot_y=[];
             
             %% Running stuff
             fprintf('Computing controller...\n');
             
             tic
-            QSys.controller = get_controller(QSys);
+%       QSys.controller = get_controller(QSys,'robust');
+            QSys.controller = get_controller(QSys, 'interval');
             toc            
             
             %  fprintf('Running closed loop...')
@@ -118,15 +124,10 @@ classdef quad_system <STLC_lti
             %  fprintf('\ndone.\n');
 
         end
-
-        function controller = get_controller(Sys)
-            Sys.sysd = c2d(Sys.sys, Sys.ts);
-            controller = STLC_get_controller(Sys,'interval');
-        end
         
-        function QSys = update_plot(QSys)
-            QSys = simple_plot(QSys);
-        end
+%        function QSys = update_plot(QSys)
+%            QSys = simple_plot(QSys);
+%        end
         
 %         function obj = get_objective(Sys, X, Y, U,W, rho,wr)
 %            obj = 1;

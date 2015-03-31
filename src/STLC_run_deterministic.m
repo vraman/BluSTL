@@ -1,4 +1,4 @@
-function [Sys, params] = STLC_run_deterministic(Sys, controller)
+function [Sys, params, rob] = STLC_run_deterministic(Sys, controller)
 % STLC_run_deterministic    runs a receding horizon control problem 
 %                           for the system described by Sys, using the
 %                           provided controller optimizer object, using the 

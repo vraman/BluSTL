@@ -39,14 +39,7 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,k,ts,var,M)
     
     a = interval(1);
     b = interval(2);
-    
-%     if a == Inf
-%         a = k*ts;
-%     end
-%     if b == Inf
-%         b = k*ts;
-%     end
-    
+        
     a = max([0 floor(a/ts)-1]); 
     b = ceil(b/ts)-1; 
     
@@ -56,19 +49,19 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,k,ts,var,M)
             [F,Plow,Pup] = pred(phi.st,k,var,M);
                      
         case 'not'
-            [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,k,ts, var,M);
-            [Fnot, Pnot1,Pnot2] = not(Prest1,Prest2);
+            [Frest,Prest_low,Prest_up] = STL2MILP_robust_interval(phi.phi,k,ts, var,M);
+            [Fnot, Pnot_low,Pnot_up] = not(Prest_low,Prest_up);
             F = [F, Fnot, Frest];
-            Plow = Pnot1;
-            Pup = Pnot2;
+            Plow = Pnot_low;
+            Pup = Pnot_up;
 
         case 'or'
-            [Fdis1,Pdis11,Pdis12] = STL2MILP_robust_interval(phi.phi1,k,ts, var,M);
-            [Fdis2,Pdis21,Pdis22] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
-            [For, Por1,Por2] = or([Pdis11;Pdis21],[Pdis12;Pdis22],M);
+            [Fdis1,Pdis1_low,Pdis1_up] = STL2MILP_robust_interval(phi.phi1,k,ts, var,M);
+            [Fdis2,Pdis2_low,Pdis2_up] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
+            [For, Por_low,Por_up] = or([Pdis1_low;Pdis2_low],[Pdis1_up;Pdis2_up],M);
             F = [F, For, Fdis1, Fdis2];
-            Plow = Por1;
-            Pup = Por2;
+            Plow = Por_low;
+            Pup = Por_up;
 
         case 'and'
             [Fcon1,Pcon11,Pcon12] = STL2MILP_robust_interval(phi.phi1,k,ts, var,M);
@@ -129,7 +122,7 @@ function [F,z1,z2] = pred(st,k,var,M)
     if findstr('<', st)
         st = regexprep(st,'<','<= ');
         st = regexprep(st,'<= ',' +');
-        st = ['-',st];
+        st = ['-',st];           
     end
     if findstr('>', st)
         st = regexprep(st,'>','>= ');
@@ -137,49 +130,31 @@ function [F,z1,z2] = pred(st,k,var,M)
     end
          
     F = [];
-    
     zAll = [];
     
     for l=1:k
-        % the below conditional statements allow specifications to refer to
-        % the previous and next time steps (e.g. when controlling input)
         t_st = st;
-        if l<k
-            t_st = regexprep(t_st,'t+1\)',[num2str(l+1) '\)']);
-        else
-            t_st = regexprep(t_st,'t+1\)',[num2str(l) '\)']);
-        end
-        if l>1
-            t_st = regexprep(t_st,'t-1\)',[num2str(l-1) '\)']);
-        else
-            t_st = regexprep(t_st,'t-1\)',[num2str(l) '\)']);
-        end
         t_st = regexprep(t_st,'t\)',[num2str(l) '\)']);
-        
-        try %upper and lower bounds
+        try 
             z = eval(t_st);
         end
-        
-%         z1Temp = sdpvar(size(val));
-%         z2Temp = sdpvar(size(val));
-%         F = [F, z1Temp >= val];
-%         F = [F, z2Temp <= val];
-%         zAll1 = [zAll1,z1Temp];
-%         zAll2 = [zAll2,z2Temp];
-
         zAll = [zAll, z];
 
     end
     
+    z1 = zAll;
+    z2 = zAll;
+    
+    % ALEX: I don't like/understand the following commented lines. 
+    %       it sure creates lots of constraints where none are needed...
     
     % take the and over all dimensions for multi-dimensional signals
-    z1 = sdpvar(1,k);
-    z2 = sdpvar(1,k);
-    
-    for i=1:k
-        [Fnew, z1(:,i), z2(:,i)] = and(zAll(:,i),zAll(:,i),M);
-        F = [F, Fnew];
-    end
+%    z1 = sdpvar(1,k);
+%    z2 = sdpvar(1,k);
+%    for i=1:k
+%        [Fnew, z1(:,i), z2(:,i)] = and(zAll(:,i),zAll(:,i),M);
+%        F = [F, Fnew];
+%    end
 end
 
 % BOOLEAN OPERATIONS
@@ -189,8 +164,8 @@ function [F,Plow,Pup] = and(p_list1,p_list2,M)
 end
 
 
-function [F,Plow,Pup] = or(p_list1,p_list2,M)
-     [F,Plow,Pup] = max_r(p_list1,p_list2,M);
+function [F,Plow,Pup] = or(p_list_low,p_list_up,M)
+     [F,Plow,Pup] = max_r(p_list_low,p_list_up,M);
 end
 
 
@@ -216,7 +191,7 @@ function [F,P_alwlow,P_alwup] = always(Plow,Pup,a,b, k,M)
         [ia, ib, over] = getIndices(i,a,b,k);
         [F0,P0low,P0up] = and(Plow(ia:ib)',Pup(ia:ib)',M);
         if over
-            F0 = [F0, P_alwlow(i) == -M];
+            F0 = [F0, P_alwlow(i) == -M*.9];
         else
             F0 = [F0, P_alwlow(i)==P0low];
         end
@@ -236,7 +211,7 @@ function [F,P_evlow,P_evup] = eventually(Plow,Pup,a,b, k,M)
         [ia, ib, over] = getIndices(i,a,b,k);
         [F0,P0low,P0up] = or(Plow(ia:ib)',Pup(ia:ib)',M);
         if over
-            F0 = [F0, P_evup(i) == M];
+            F0 = [F0, P_evup(i) == M*.9];
         else
             F0 = [F0, P_evup(i)==P0up];
         end

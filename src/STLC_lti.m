@@ -229,8 +229,8 @@ classdef STLC_lti
         end
         
         % Executes the controller in open loop mode
-        function [system_data, params] = run_open_loop(Sys, controller)
-            [system_data, params] = STLC_run_open_loop(Sys, controller);
+        function [system_data, params, rob] = run_open_loop(Sys, controller)
+            [system_data, params, rob] = STLC_run_open_loop(Sys, controller);
         end
         
         % Executes the controller in a receding horizon (MPC)
