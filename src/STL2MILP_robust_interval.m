@@ -144,17 +144,7 @@ function [F,z1,z2] = pred(st,k,var,M)
     
     z1 = zAll;
     z2 = zAll;
-    
-    % ALEX: I don't like/understand the following commented lines. 
-    %       it sure creates lots of constraints where none are needed...
-    
-    % take the and over all dimensions for multi-dimensional signals
-%    z1 = sdpvar(1,k);
-%    z2 = sdpvar(1,k);
-%    for i=1:k
-%        [Fnew, z1(:,i), z2(:,i)] = and(zAll(:,i),zAll(:,i),M);
-%        F = [F, Fnew];
-%    end
+  
 end
 
 % BOOLEAN OPERATIONS
@@ -195,8 +185,12 @@ function [F,P_alwlow,P_alwup] = always(Plow,Pup,a,b, k,M)
         else
             F0 = [F0, P_alwlow(i)==P0low];
         end
-    
-        F = [F;F0,P_alwup(i)==P0up];
+        if over == 2
+            F0 = [F0, P_evlup(i) == M*.9];
+        else
+            F = [F;F0,P_alwup(i)==P0up];
+        end
+        
     end
     
 end
@@ -210,13 +204,16 @@ function [F,P_evlow,P_evup] = eventually(Plow,Pup,a,b, k,M)
     for i = 1:k
         [ia, ib, over] = getIndices(i,a,b,k);
         [F0,P0low,P0up] = or(Plow(ia:ib)',Pup(ia:ib)',M);
-        if over
+        if over >=1
             F0 = [F0, P_evup(i) == M*.9];
         else
             F0 = [F0, P_evup(i)==P0up];
         end
-    
-        F = [F;F0,P_evlow(i)==P0low];
+        if over == 2
+            F0 = [F0, P_evlow(i) == -M*.9];
+        else
+            F = [F;F0,P_evlow(i)==P0low];
+        end
     end
     
 end
@@ -309,7 +306,11 @@ function [ia, ib, over] = getIndices(i,a,b,k)
     ia = min(k,i+a);
     ib = min(k,i+b);
     if k < i + b
-        over = 1;
+        if k < i + a
+            over = 2;
+        else
+            over = 1;
+        end
     else
         over = 0;
     end
