@@ -68,66 +68,47 @@ classdef quad_system <STLC_lti
     end
     
     methods
-        function QSys = init_control(QSys)
+        function QS = init_control(QS)
             %% Controller Initialisation
             % Time
-            QSys.time = 0:.5:100; % time for the dynamics
-            QSys.ts=1; % sampling time for controller
-            QSys.L=10;  % horizon (# of steps)
-            QSys.nb_stages=2; % repeats time
+            QS.time = 0:.5:100; % time for the dynamics
+            QS.ts=1; % sampling time for controller
+            QS.L=10;  % horizon (# of steps)
+            QS.nb_stages=2; % repeats time
 
-            QSys.max_react_iter=100;
-            QSys.min_rob = 0.1;
-            QSys.lambda_rho = 1000;
+            QS.max_react_iter=100;
+            QS.min_rob = 0.1;
+            QS.lambda_rho = 1000;
             
             % Input constraints
-            QSys.u_ub(:)=1;
-            QSys.u_lb(:)= -1;
+            QS.u_ub(:)=10;
+            QS.u_lb(:)= -10;
             
             % Initial state
-            QSys.x0 = [0.1; 0.1; 0.1; zeros(7,1)];
+            QS.x0 = [0.1; 0.1; 0.1; zeros(7,1)];
             
             
             %% STL formula
-             %QSys.stl_list{1} = 'alw_[0,Inf] ( abs(x1(t))<.1 and abs(x2(t))<.1 and abs(x3(t)-1)<.1 )';
+            QS.stl_list = {'alw (x1(t)<10 and x1(t)>0)','alw (x2(t)<10 and x2(t)>0)','alw (x3(t)<10 and x3(t)>0)'};
 
-             %             QSys.stl_list{1} = 'alw (x3(t)<1  =>  ev_[0, 10] (x3(t)>10)) and ((x3(t)>10)  =>  ev_[0, 10] (x3(t)<2))';
-             QSys.stl_list{1} = 'alw (x3(t)<11 and x3(t)>0)';
-%             QSys.stl_list{2} = '(ev_[0, 10] (x3(t)>10))';
-             QSys.stl_list{2} = 'alw ((x3(t)<1)  => (ev_[0, 10] (x3(t)>10)))';
-             QSys.stl_list{3} = 'alw ((x3(t)>10) => (ev_[0, 10] (x3(t)<1)))';
-
-
-%             QSys.stl_list = {'ev_[0,10] ((X(1:2,t) < [9;9]) and (X(1:2,t) > [8;8]))', ...
-%                 'ev_[0,10] ((X(1:2,t) < [1;1]) and (X(1:2,t) > [0.5;0.5]))', ...
-%                 'ev_[0,10] ((X(1:2,t) < [4;2]) and (X(1:2,t) > [3;1]))'};
-
-
-            %           QSys.stl_list{3} = 'ev_[0, 10] (  x1(t)>10 ) and ev_[10, 20] (x1(t)<1)';
-            %           QSys.stl_list{4} = 'alw_[0,Inf] ( x1(t)<11 and x1(t)>0)';
             
             %% Plotting
-            QSys.plot_x = [3];
-            QSys.plot_y=[];
+            QS.plot_x = [3];
+            QS.plot_y=[];
             
             %% Running stuff
             fprintf('Computing controller...\n');
             
             tic
-%       QSys.controller = get_controller(QSys,'robust');
-            QSys.controller = get_controller(QSys, 'interval');
+            QS.controller = get_controller(QS, 'interval');
             toc            
-            
-            %  fprintf('Running closed loop...')
-            %  HR = run_open_loop_adv(HR, controller, adversary);
-            %  HR = run_adversarial(HR, controller, adversary);
-            %  fprintf('\ndone.\n');
+          
 
         end
         
-%        function QSys = update_plot(QSys)
-%            QSys = simple_plot(QSys);
-%        end
+       function QS = update_plot(QS)
+           QS = quad_plot(QS);
+       end
         
 %         function obj = get_objective(Sys, X, Y, U,W, rho,wr)
 %            obj = 1;
@@ -182,47 +163,5 @@ end
         end
 
 
-    function QS = quad_plot(QS)
-        % quad_plot updates the plots of a quad_system at runtime
-        %
-        % Input: QS, the quad_system instance
-        % Output: QS with plots modified
-
-        system_style= {'LineWidth',2};
-        model_style = {'--g'};
-        axis_style = {'Fontsize',12}; 
-
-        if isempty(QS.h)
-
-            QS.h.hf = figure;
-            nb_plots = numel(QS.plot_x)+numel(QS.plot_y)+numel(QS.plot_u)+numel(QS.plot_w);
-            cur_plot = 1;
-
-
-            %% Create the environment
-            ex = 6;
-            env = envLTL(ex);
-            obstacles = env.work.unsafe;
-            QS.h.hf = plotEnv(env, obstacles);
-
-            hold on;
-            zlabel('z (m)');
-            QS.h.Xpast = plot3(QS.system_data.Y(1,:)', QS.system_data.Y(2,:)', QS.system_data.Y(3,:)', ...
-                        'ob', 'markersize', 6, 'markerfacecolor', 'b');
-            hold on;
-            QS.h.Xpred = plot3(QS.model_data.Y(1,:),QS.model_data.Y(2,:), QS.model_data.Y(3,:), ...
-                        'og', 'markersize', 6, 'markerfacecolor', 'g');
-
-            hbutton=uicontrol(QS.h.hf,'style','pushbutton',...
-                                  'string','Stop',...
-                                  'callback','Stop()'...
-                              );        
-        else
-
-            set(QS.h.Xpast,'XData', QS.system_data.Y(1,:), 'YData', QS.system_data.Y(2,:), 'ZData', QS.system_data.Y(3,:));
-            set(QS.h.Xpred,'XData', QS.model_data.Y(1,:), 'YData', QS.model_data.Y(2,:), 'ZData', QS.model_data.Y(3,:));
-
-
-        end
-    end
+    
     
