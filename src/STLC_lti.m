@@ -23,6 +23,7 @@ classdef STLC_lti
         ts         % sampling time
         L          % horizon
         time
+        time_d
         nb_stages
         var
         stl_list
@@ -251,6 +252,10 @@ classdef STLC_lti
         % Default plot function
         function Sys = update_plot(Sys)
             Sys = STLC_update_plot(Sys);
+        end
+        
+        function Wn = sensing(HR)
+                Wn = STLC_sensing(HR);
         end
     end
 end

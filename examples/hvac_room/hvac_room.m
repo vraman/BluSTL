@@ -95,23 +95,22 @@ classdef hvac_room <STLC_lti
         
         function HR = update_plot(HR)
                 HR = plot_adversary(HR);
-    end
+        end
+        
 end
+
 end
 
 function Sys = plot_adversary(Sys)
 
 if isempty(Sys.h)
-    time = Sys.time;
-    nb_stages=Sys.nb_stages;
-    ntime = zeros(1, nb_stages*numel(time));
-    for istage = 0:nb_stages-1
-        ntime(istage*numel(time)+1:(istage+1)*numel(time))= time+istage*(time(end)+time(2)) ;
-    end
-    time = ntime;
-    Wref = repmat(Sys.Wref,1,Sys.nb_stages);
     
-    XLim = [0 Sys.nb_stages*Sys.time(end)/60];
+    time = Sys.time;
+    Wref = Sys.Wref;
+    nb_stages=Sys.nb_stages;
+    one_stage = numel(time)/nb_stages;
+    
+    XLim = [0 Sys.time(one_stage)/60];
     Sys.h.hf = figure;
     
     % Temperature
@@ -126,15 +125,15 @@ if isempty(Sys.h)
     Sys.h.Tmodel = plot(Sys.model_data.time/60,Sys.model_data.X(5,:), '--g','LineWidth',2);
   
     % Comfort region
-    plot(time(1:30:end)/60, Wref(6,1:30:end), '-k','LineWidth',2)
+    plot(time(1:30:one_stage)/60, Wref(6,1:30:one_stage), '-k','LineWidth',2)
     legend('Room Temperature', 'Outside Temperature','Model prediction', 'Comfort Region')  
-    plot(time(1:30:end)/60, 2*70-Wref(6,1:30:end), '-k','LineWidth',2)
+    plot(time(1:30:one_stage)/60, 2*70-Wref(6,1:30:one_stage), '-k','LineWidth',2)
    
     if ~Sys.det
         % Tout bounds
-        plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_lb(3), '-m','LineWidth',1)
-        plot(time(1:60:end)/60, Wref(3,1:60:end), '--m','LineWidth',1);
-        plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_ub(3), '-m','LineWidth',1)
+        plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage)+Sys.w_lb(3), '-m','LineWidth',1)
+        plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage), '--m','LineWidth',1);
+        plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage)+Sys.w_ub(3), '-m','LineWidth',1)
     end
     
     %  xlabel('Time (hours)')
@@ -144,7 +143,7 @@ if isempty(Sys.h)
     % occupancy
     subplot(5,1,4);
     hold on;grid on;
-    stairs(time/60, Wref(7,:), '-k', 'LineWidth',2);
+    stairs(time(1:one_stage)/60, Wref(7,1:one_stage), '-k', 'LineWidth',2);
     legend('Occupancy');
     % xlabel('Time (hours)')
     set(gca, 'XLim', XLim, 'YLim', [-1.1 1.1], 'XTick', 0:3:nb_stages*24, ...

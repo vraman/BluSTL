@@ -26,7 +26,7 @@ sys = Sys.sys;
 ts=Sys.ts; % sampling time
 L=Sys.L;  % horizon (# of steps)
 time = Sys.time; % time for the date
-time_d = (0:2*L-1)*ts; % discretized time for the controller
+Sys.time_d = (0:2*L-1)*ts; % discretized time for the controller
 
 %% System dimensions and variables
 Sys.sysd = c2d(sys,ts);
@@ -41,10 +41,7 @@ ny=Sys.ny;
 if isempty(Sys.Wref)
     Sys.Wref = 0*time;
 end
-Wref = Sys.Wref;
-for iwx=1:nw
-    Wn(iwx,:) = interp1( time , Wref(iwx,:)', time_d)';
-end
+Wn = sensing(Sys);
 
 
 %% Make data nb_stages times longer
@@ -53,8 +50,8 @@ ntime = zeros(1, nb_stages*numel(time));
 for istage = 0:nb_stages-1
     ntime(istage*numel(time)+1:(istage+1)*numel(time))= time+istage*(time(end)+time(2)) ;
 end
-time = ntime;
-Wref = repmat(Wref,1,Sys.nb_stages);
+Sys.time = ntime;
+Sys.Wref = repmat(Sys.Wref,1,Sys.nb_stages);
 
 
 %%  Solving for the first horizon L
@@ -95,20 +92,19 @@ Sys.system_data.X = x0;
 Sys.system_data.Y = [];
 Sys.system_data.W = [];
 
-Sys.model_data.time = time_d;
-Sys.model_data.X = repmat(0*time_d(1:end), [nx 1]);
-Sys.model_data.Y = repmat(0*time_d(1:end-1), [ny 1]);
-Sys.model_data.U = repmat(0*time_d(1:end-1), [nu 1]);
+Sys.model_data.time = Sys.time_d;
+Sys.model_data.X = repmat(0*Sys.time_d(1:end), [nx 1]);
+Sys.model_data.Y = repmat(0*Sys.time_d(1:end-1), [ny 1]);
+Sys.model_data.U = repmat(0*Sys.time_d(1:end-1), [nu 1]);
 Sys.model_data.W = Wn;
 
 compute_input();
         
-time_new = 0;
 u_new = Upred(:,i_transient);
 w_new = Wn(:,i_transient);
 [x_new, y_new] = system_step(Sys, x0, u_new, w_new);
 i_past =  i_past+1;
-params{end+1} = {i_transient,time_d,donen,pn,Xn,Un,Wn};
+params{end+1} = {i_transient,Sys.time_d,donen,pn,Xn,Un,Wn};
 
 update_hist_data();
 Sys = update_plot(Sys);
@@ -116,9 +112,9 @@ Sys = update_plot(Sys);
 %% loop
 pause
 i_transient = i_transient+1;
-while (time_d(end)+ts< time(end))
+while (Sys.time_d(end)+ts< time(end))
     % pause;
-    x0 = x_new
+    x0 = x_new;
     time_new = time_new+ts;
     
     %% updates the model of controller and environment for the next horizon
@@ -132,7 +128,7 @@ while (time_d(end)+ts< time(end))
     w_new = Wn(:,i_transient);
     [x_new, y_new] = system_step(Sys, x0, u_new, w_new);
     i_past =  i_past+1;
-    params{end+1} = {i_transient,time_d,donen,pn,Xn,Un,Wn};
+    params{end+1} = {i_transient,Sys.time_d,donen,pn,Xn,Un,Wn};
 
     %% Update plots
     update_hist_data();
@@ -170,7 +166,7 @@ end
         Sys.system_data.Y(:,end+1) = y_new;
         Sys.system_data.W(:,end+1) = w_new;
         
-        Sys.model_data.time = time_d;
+        Sys.model_data.time = Sys.time_d;
         Sys.model_data.X = double(Xpred);
         Sys.model_data.Y = [Sys.sysd.C*double(Xpred(:,1:end-1)) + Sys.sysd.D*[double(Upred); double(Wn(:,1:end-1))]];
         Sys.model_data.U = double(Upred);
@@ -181,7 +177,7 @@ end
     function update_controller_data()
         
         if (i_past>= L+1)
-            time_d = time_d+ts; % move forward one time step
+            Sys.time_d = Sys.time_d+ts; % move forward one time step
         end
         
         if i_transient<L
@@ -196,9 +192,7 @@ end
             Xn(:,1:L) =   Sys.system_data.X(:,end-L+1:end);     %    previously computed temperatures
         end
         
-        for wx=1:nw
-            Wn(wx,:) = interp1( time , Wref(wx,:)', time_d)';
-        end
+        Wn = sensing(Sys);
         
     end
 
