@@ -22,9 +22,9 @@ Kx = [ p(2)*ones(3, 1);  v(2)*ones(3, 1);  r(2)*ones(2, 1);  w(2)*ones(2, 1);
       -p(1)*ones(3, 1); -v(1)*ones(3, 1); -r(1)*ones(2, 1); -w(1)*ones(2, 1)];
 
   
-fPoly = {strcat('alw_[0,Inf] (',mat2str(Hx),'*X(:,t) <= ',mat2str(Kx),')'), ...
-         strcat('alw_[0,Inf] (',mat2str(Hu),'*U(:,t-1) <= ',mat2str(Ku),')')};
-fPoly = {};
+fPoly = {strcat('alw (',mat2str(Hx),'*X(:,t) <= ',mat2str(Kx),')'), ...
+         strcat('alw (',mat2str(Hu),'*U(:,t) <= ',mat2str(Ku),')')};
+%fPoly = {};
 
 
 G = env.work.safe;
@@ -32,13 +32,13 @@ fSafe = {};
 if ~isempty(G)
     % Create safety constraints -- disjunction of polytopes
     nPoly = length(G);
-    fSafe = strcat('alw_[0, Inf] (');
+    fSafe = strcat('alw (');
     for i = 1:nPoly
-            [h,l] = double(G(i));
+            [h,k] = double(G(i));
             if i~=1
                 fSafe = [fSafe, ' or ('];
             end
-            fSafe = [fSafe, strcat(mat2str(h),'*Y(:,t) <= ',mat2str(l))];
+            fSafe = [fSafe, strcat(mat2str(h),'*Y(:,t) <= ',mat2str(k))];
     end
     for j = 1:nPoly
         fSafe = [fSafe, ')'];
@@ -46,7 +46,7 @@ if ~isempty(G)
 else
     fSafe = {};
 end
-fSafe = {};
+%fSafe = {};
 
 
 if ex==3
@@ -58,6 +58,7 @@ else
 end
 
 
+% For patrolling the goal regions in ANY ORDER
 if ~isempty(F)
     % Create "goal" constraints
     fGoal = {};
@@ -65,14 +66,14 @@ if ~isempty(F)
     for i = 1:length(F)
         nPoly = length(F{i});   
         
-        fGoal{i} = strcat('alw_[0, Inf] (ev_[0,',int2str(L),'] (');
+        fGoal{i} = strcat('alw (ev_[0,',int2str(L),'] (');
         for j = 1:nPoly
             [h,k] = double(F{i}(j));
             
             if j~=1
                 fGoal{i} = [fGoal{i}, ' or ('];
             end
-            fGoal{i} = [fGoal{i}, strcat(mat2str(h),'*Y(:,t) <= ',mat2str(l))];
+            fGoal{i} = [fGoal{i}, strcat(mat2str(h),'*Y(:,t) <= ',mat2str(k))];
            
         end
         for j = 1:nPoly-1
@@ -83,7 +84,56 @@ if ~isempty(F)
 else
     fGoal = {};
 end
-fGoal={};
+%fGoal={};
+
+
+% % For CYCLIC patrolling of regions
+%
+% if ~isempty(F)
+%     % Create "goal" constraints
+%     fGoal = {};
+%     
+%     nPoly = length(F{end});
+%     prevGoal = {};
+%     for j = 1:nPoly
+%         [h,k] = double(F{end}(j));
+% 
+%         if j~=1
+%             prevGoal = [prevGoal, ' or ('];
+%         end
+%         prevGoal = [prevGoal, strcat(mat2str(h),'*Y(:,t) <= ',mat2str(k))];
+%            
+%     end
+%     for j = 1:nPoly-1
+%         prevGoal = [prevGoal, ')'];
+%     end
+%     
+%     for i = 1:length(F)
+%         nPoly = length(F{i});   
+%         
+%         fGoal{i} = strcat('alw ((');
+%         
+%         fGoal{i} = [fGoal{i}, strcat(prevGoal{:}, ')','=> (ev_[0,',int2str(L),'] (')];
+%         
+%         prevGoal = {};
+%         for j = 1:nPoly
+%             [h,k] = double(F{i}(j));
+%             
+%             if j~=1
+%                 prevGoal = [prevGoal, ' or ('];
+%             end
+%             prevGoal = [prevGoal, strcat(mat2str(h),'*Y(:,t) <= ',mat2str(k))];
+%         end
+%         fGoal{i} = [fGoal{i}, prevGoal{:}];
+%         for j = 1:nPoly-1
+%             fGoal{i} = [fGoal{i}, ')'];
+%         end
+%         fGoal{i} = [fGoal{i}, ')))'];
+%     end
+% else
+%     fGoal = {};
+% end
+% %fGoal={};
 
 %% STL formula
 QS.stl_list = [QS.stl_list, fPoly, fSafe, fGoal{:}];
