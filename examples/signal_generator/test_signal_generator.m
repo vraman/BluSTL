@@ -19,7 +19,13 @@ SG.Wref = [sin(SG.time); cos(SG.time)];
 %% STL formula
 
 %SG.stl_list = {'ev_[0, 13] (x1(t) > 0.1)'};
-SG.stl_list = {'ev_[3,5] (y1(t) > 5 and y2(t)<-2)'};
+
+% SG.stl_list = {'ev_[3,5] (y1(t) > 5 and y2(t)<-2)'};
+
+%% TODO: make it so the following would work:
+%SG.stl_list = {'ev_[3,5] ([y1(t);-y2(t)] > [5;2])'};
+SG.stl_list = {'ev_[3,5] (Y(1:2,t) > 2)'};
+
 %SG.stl_list{1} = '( (x1(t)<1  =>  ev_[0, 6] (x1(t)>3)) and ((x1(t)>3)  =>  ev_[0, 6] (x1(t)<1)) )';
 %SG.stl_list{1} = '( y1(t)<1  =>  ev_[0, 10] (y1(t)>2)) and ((y1(t)>2)  =>  ev_[0, 10] (y1(t)<1))';
 %SG.stl_list{1} = 'alw_[0,Inf] ( y1(t)<11 and ev_[0,5](y1(t)>0) and ev_[0,5](y1(t)<1))';
@@ -34,7 +40,7 @@ SG.bigM = 1000;
 %% running stuff
 fprintf('Computing controller...');
 tic;
-SG.controller = get_controller(SG,'robust');
+SG.controller = get_controller(SG,'interval');
 toc;
-run_open_loop(SG, SG.controller);
-%run_deterministic(SG, controller);
+%run_open_loop(SG, SG.controller);
+run_deterministic(SG, SG.controller);
