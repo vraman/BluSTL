@@ -24,7 +24,6 @@ Kx = [ p(2)*ones(3, 1);  v(2)*ones(3, 1);  r(2)*ones(2, 1);  w(2)*ones(2, 1);
   
 fPoly = {strcat('alw (',mat2str(Hx),'*X(:,t) <= ',mat2str(Kx),')'), ...
          strcat('alw (',mat2str(Hu),'*U(:,t) <= ',mat2str(Ku),')')};
-%fPoly = {};
 
 
 G = env.work.safe;
@@ -46,7 +45,6 @@ if ~isempty(G)
 else
     fSafe = {};
 end
-%fSafe = {};
 
 
 if ex==3
@@ -84,7 +82,6 @@ if ~isempty(F)
 else
     fGoal = {};
 end
-%fGoal={};
 
 
 % % For CYCLIC patrolling of regions
@@ -134,6 +131,12 @@ end
 %     fGoal = {};
 % end
 % %fGoal={};
+
+
+fPoly = {};
+fSafe = {};
+fGoal={};
+
 
 %% STL formula
 QS.stl_list = [QS.stl_list, fPoly, fSafe, fGoal{:}];
