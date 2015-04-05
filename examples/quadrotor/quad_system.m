@@ -26,7 +26,6 @@ classdef quad_system <STLC_lti
             %         'sys' system info
 
 
-            dim=3;
             
             % Parameters (modified from van der Burg 13)
             g = 9.81;       % gravity (m/s^2)
@@ -50,12 +49,26 @@ classdef quad_system <STLC_lti
                   zeros(2,1) zeros(2,2); 
                   zeros(2,1) arm/J*eye(2)];
               
+            numObs = 1;
+            
+            Bw = zeros(size(Bu,1),numObs); 
+            % complete Bw with 0s column for the number of obstacles
+              
             C = [1 zeros(1, 9); 
              0 1 zeros(1, 8);
              0 0 1 zeros(1, 7)];
            
             % calls super class constructor
-            QS = QS@STLC_lti(A,Bu,C,[]);
+            QS = QS@STLC_lti(A,Bu,Bw,C,[],[]);
+            
+            QS.xlabel{1} = 'x';
+            QS.xlabel{2} = 'y';
+            QS.xlabel{3} = 'z';
+            QS.xlabel{9} = 'vel';
+            QS.xlabel{10} = 'omega';
+            for i=1:numObs
+                QS.wlabel{i} = strcat('obs',int2str(i));
+            end
             
             % env
           %  ex=3;
@@ -81,16 +94,28 @@ classdef quad_system <STLC_lti
             QS.lambda_rho = 1000;
             
             % Input constraints
-            QS.u_ub(:)=10;
-            QS.u_lb(:)= -10;
+            QS.u_ub(:)=1;
+            QS.u_lb(:)= -1;
             
             % Initial state
             QS.x0 = [0.1; 0.1; 0.1; zeros(7,1)];
             
             
             %% STL formula
-            QS.stl_list = {'alw (x1(t)<10 and x1(t)>0)','alw (x2(t)<10 and x2(t)>0)','alw (x3(t)<10 and x3(t)>0)'};
+            
 
+             QS.stl_list = {'alw (x(t)<10 and x(t)>0)','alw (y(t)<10 and y(t)>0)','alw (z(t)<10 and z(t)>0)'};
+             
+             QS.stl_list{end+1} = 'alw ((x(t) < 1)  => (ev_[0, 5] (x(t) > 5)))';
+             QS.stl_list{end+1} = 'alw ((x(t) > 5)  => (ev_[0, 5] (x(t) < 1)))';
+             QS.stl_list{end+1} = 'alw ((y(t) < 1)  => (ev_[0, 5] (y(t) > 5)))';
+             QS.stl_list{end+1} = 'alw ((y(t) > 5)  => (ev_[0, 5] (y(t) < 1)))';
+
+             
+%             QS.stl_list{end+1} = 'alw ((obs1(t)<0) or ((x(t)<2) or (y(t)<2)))';
+             
+            
+            QS = getSpecs(QS);
             
             %% Plotting
             QS.plot_x = [3];
@@ -113,6 +138,10 @@ classdef quad_system <STLC_lti
 %         function obj = get_objective(Sys, X, Y, U,W, rho,wr)
 %            obj = 1;
 %         end
+
+        function Wn = sensing(QS)
+                Wn = quad_sensing(QS);
+        end
         
     end
 end
@@ -139,7 +168,7 @@ end
                           'callback','Stop()'...
                       );        
                   
-                QS.system_data.U(1,:)  
+                QS.h.hf2 = figure;
     
                 lg = {'x', 'y', 'z'};
                 for iY = 1:3
@@ -160,6 +189,20 @@ end
                 end
                 
             end
+        end
+        
+        function Wn = quad_sensing(QS)
+            
+            x_now = QS.x0;
+            nw = QS.nw;
+            Wn = zeros(1,2*QS.L);
+            
+            for i=1:nw % for each obstacle
+                if x_now(1) > 1 % TODO: define sensing criteria for each obstacle
+                    Wn(iwx,:) = ones(1,2*QS.L);
+                end
+            end
+
         end
 
 
