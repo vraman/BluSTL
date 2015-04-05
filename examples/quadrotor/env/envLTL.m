@@ -13,7 +13,7 @@ env.work = struct();
 env.AP = struct();
 env.notAP = struct();
 
-e = 0.3;    % expansion/contraction factor
+e = 0;    % expansion/contraction factor
 env.util.e = e;
 
 if 0 == ex
@@ -114,13 +114,15 @@ elseif 6 == ex
     workspace = getPoly(arena);
 
     % Create labled regions
-    obs = [ getPoly([2,4, 5,7, 2,6], e)];
+    obs = [ getPoly([2,2.5,2,2.5,0,10], e)];
     env.work.unsafe = obs;
     env.work.safe = regiondiff(workspace, obs);   
 
-    env.AP.a = getPoly([8,9,8,9, 0,8]);
-    env.AP.b = getPoly([0.5,1,0.5,1,0,8]);
-    env.AP.c = getPoly([3,4,1,2,0,8]);
+    env.AP.a = getPoly([0,1,0,1,0,1]);
+    env.AP.b = getPoly([4,5,4,5,4,5]);
+    
+    %env.AP.a = getPoly([0.5,1.5,0.5,1.5,0,10]);
+    %env.AP.b = getPoly([4.5,4.5,0.5,1.5,0,10]);
     
 else
     error('Invalid example number.');

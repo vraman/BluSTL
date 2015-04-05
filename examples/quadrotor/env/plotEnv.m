@@ -16,7 +16,7 @@ hold on
 % Obstacle boundaries
 ops.shade = 0.1;
 ops.color = [0.5, 0.5, 0.5];
-%plot(obstacles, ops);
+plot(obstacles, ops);
 
 % Obstacles
 q = env.util.e;
