@@ -90,7 +90,7 @@ This function is called by:
 0044             HR.time = 0:1:1439; <span class="comment">% time for the dynamics</span>
 0045             HR.ts=30; <span class="comment">% sampling time for controller</span>
 0046             HR.L=L;  <span class="comment">% horizon (# of steps)</span>
-0047             HR.nb_stages=1; <span class="comment">% repeats time</span>
+0047             HR.nb_stages=3; <span class="comment">% repeats time</span>
 0048             
 0049             HR.max_react_iter=100;
 0050             HR.min_rob = .1;
@@ -141,87 +141,86 @@ This function is called by:
 0095         
 0096         <a name="_sub2" href="#_subfunctions" class="code">function HR = update_plot(HR)</a>
 0097                 HR = <a href="#_sub4" class="code" title="subfunction Sys = plot_adversary(Sys)">plot_adversary</a>(HR);
-0098     <span class="keyword">end</span>
-0099 <span class="keyword">end</span>
+0098         <span class="keyword">end</span>
+0099         
 0100 <span class="keyword">end</span>
 0101 
-0102 <a name="_sub3" href="#_subfunctions" class="code">function Sys = plot_adversary(Sys)</a>
+0102 <span class="keyword">end</span>
 0103 
-0104 <span class="keyword">if</span> isempty(Sys.h)
-0105     time = Sys.time;
-0106     nb_stages=Sys.nb_stages;
-0107     ntime = zeros(1, nb_stages*numel(time));
-0108     <span class="keyword">for</span> istage = 0:nb_stages-1
-0109         ntime(istage*numel(time)+1:(istage+1)*numel(time))= time+istage*(time(end)+time(2)) ;
-0110     <span class="keyword">end</span>
-0111     time = ntime;
-0112     Wref = repmat(Sys.Wref,1,Sys.nb_stages);
-0113     
-0114     XLim = [0 Sys.nb_stages*Sys.time(end)/60];
-0115     Sys.h.hf = figure;
-0116     
-0117     <span class="comment">% Temperature</span>
-0118     subplot(5,1,1:3);
-0119     hold on; grid on;
-0120     
-0121     <span class="comment">% Troom</span>
-0122     Sys.h.Tpast = plot(Sys.system_data.time/60, Sys.system_data.X(5,1:end-1), <span class="string">'LineWidth'</span>,2);
-0123    
-0124     <span class="comment">% Tout</span>
-0125     Sys.h.Toutpast = plot(Sys.system_data.time/60, Sys.system_data.W(3,:), <span class="string">'-m'</span>, <span class="string">'LineWidth'</span>,2);
-0126     Sys.h.Tmodel = plot(Sys.model_data.time/60,Sys.model_data.X(5,:), <span class="string">'--g'</span>,<span class="string">'LineWidth'</span>,2);
-0127   
-0128     <span class="comment">% Comfort region</span>
-0129     plot(time(1:30:end)/60, Wref(6,1:30:end), <span class="string">'-k'</span>,<span class="string">'LineWidth'</span>,2)
-0130     legend(<span class="string">'Room Temperature'</span>, <span class="string">'Outside Temperature'</span>,<span class="string">'Model prediction'</span>, <span class="string">'Comfort Region'</span>)  
-0131     plot(time(1:30:end)/60, 2*70-Wref(6,1:30:end), <span class="string">'-k'</span>,<span class="string">'LineWidth'</span>,2)
-0132    
-0133     <span class="keyword">if</span> ~Sys.det
-0134         <span class="comment">% Tout bounds</span>
-0135         plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_lb(3), <span class="string">'-m'</span>,<span class="string">'LineWidth'</span>,1)
-0136         plot(time(1:60:end)/60, Wref(3,1:60:end), <span class="string">'--m'</span>,<span class="string">'LineWidth'</span>,1);
-0137         plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_ub(3), <span class="string">'-m'</span>,<span class="string">'LineWidth'</span>,1)
-0138     <span class="keyword">end</span>
-0139     
-0140     <span class="comment">%  xlabel('Time (hours)')</span>
-0141     ylabel(<span class="string">'Temperatures (°F)'</span>);
-0142     set(gca, <span class="string">'XLim'</span>,XLim , <span class="string">'XTick'</span>, 0:3:nb_stages*24, <span class="string">'FontSize'</span>, 14 );
-0143     
-0144     <span class="comment">% occupancy</span>
-0145     subplot(5,1,4);
-0146     hold on;grid on;
-0147     stairs(time/60, Wref(7,:), <span class="string">'-k'</span>, <span class="string">'LineWidth'</span>,2);
-0148     legend(<span class="string">'Occupancy'</span>);
-0149     <span class="comment">% xlabel('Time (hours)')</span>
-0150     set(gca, <span class="string">'XLim'</span>, XLim, <span class="string">'YLim'</span>, [-1.1 1.1], <span class="string">'XTick'</span>, 0:3:nb_stages*24, <span class="keyword">...</span>
-0151      <span class="string">'FontSize'</span>, 14, <span class="string">'YTick'</span>, [-1 1], <span class="string">'YTickLabel'</span>, {<span class="string">'empty'</span> <span class="string">'occupied'</span>});
-0152     
-0153  
-0154     subplot(5,1,5);
-0155     hold on;grid on;
-0156     Sys.h.Upast = stairs(Sys.system_data.time/60, Sys.system_data.U(1,:),<span class="string">'LineWidth'</span>,3);
-0157     Sys.h.Umodel = stairs(Sys.model_data.time(1:end-1)/60,Sys.model_data.U(1,:), <span class="string">'--gr'</span>,<span class="string">'LineWidth'</span>,2);
-0158     xlabel(<span class="string">'Time (hours)'</span>)
-0159     ylabel(<span class="string">'u'</span>);
-0160     
-0161     legend(<span class="string">'Input Air Flow (ft^3/min)'</span>);
-0162     set(gca, <span class="string">'XLim'</span>, XLim, <span class="string">'XTick'</span>, 0:3:nb_stages*24, <span class="string">'FontSize'</span>, 14);
-0163     
-0164 <span class="keyword">else</span>
-0165     set(Sys.h.Tpast, <span class="string">'Xdata'</span>, Sys.system_data.time/60, <span class="string">'Ydata'</span>,Sys.system_data.X(5,1:end-1));
-0166     
-0167     set(Sys.h.Toutpast, <span class="string">'Xdata'</span>, Sys.system_data.time(1:2:end)/60, <span class="string">'Ydata'</span>,Sys.system_data.W(3,1:2:end));
-0168     
-0169     set(Sys.h.Tmodel, <span class="string">'Xdata'</span>, Sys.model_data.time/60,<span class="string">'Ydata'</span>, Sys.model_data.X(5,:));
-0170     
-0171     set(Sys.h.Upast, <span class="string">'Xdata'</span>, Sys.system_data.time/60,<span class="string">'Ydata'</span>,  Sys.system_data.U(1,:));
-0172     set(Sys.h.Umodel, <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1)/60,<span class="string">'Ydata'</span>, Sys.model_data.U(1,:));
-0173     
-0174 <span class="keyword">end</span>
-0175 
-0176 <span class="keyword">end</span>
-0177 
-0178</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0104 <a name="_sub3" href="#_subfunctions" class="code">function Sys = plot_adversary(Sys)</a>
+0105 
+0106 <span class="keyword">if</span> isempty(Sys.h)
+0107     
+0108     time = Sys.time;
+0109     Wref = Sys.Wref;
+0110     nb_stages=Sys.nb_stages;
+0111     one_stage = numel(time)/nb_stages;
+0112     
+0113     XLim = [0 Sys.time(one_stage)/60];
+0114     Sys.h.hf = figure;
+0115     
+0116     <span class="comment">% Temperature</span>
+0117     subplot(5,1,1:3);
+0118     hold on; grid on;
+0119     
+0120     <span class="comment">% Troom</span>
+0121     Sys.h.Tpast = plot(Sys.system_data.time/60, Sys.system_data.X(5,1:end-1), <span class="string">'LineWidth'</span>,2);
+0122    
+0123     <span class="comment">% Tout</span>
+0124     Sys.h.Toutpast = plot(Sys.system_data.time/60, Sys.system_data.W(3,:), <span class="string">'-m'</span>, <span class="string">'LineWidth'</span>,2);
+0125     Sys.h.Tmodel = plot(Sys.model_data.time/60,Sys.model_data.X(5,:), <span class="string">'--g'</span>,<span class="string">'LineWidth'</span>,2);
+0126   
+0127     <span class="comment">% Comfort region</span>
+0128     plot(time(1:30:one_stage)/60, Wref(6,1:30:one_stage), <span class="string">'-k'</span>,<span class="string">'LineWidth'</span>,2)
+0129     legend(<span class="string">'Room Temperature'</span>, <span class="string">'Outside Temperature'</span>,<span class="string">'Model prediction'</span>, <span class="string">'Comfort Region'</span>)  
+0130     plot(time(1:30:one_stage)/60, 2*70-Wref(6,1:30:one_stage), <span class="string">'-k'</span>,<span class="string">'LineWidth'</span>,2)
+0131    
+0132     <span class="keyword">if</span> ~Sys.det
+0133         <span class="comment">% Tout bounds</span>
+0134         plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage)+Sys.w_lb(3), <span class="string">'-m'</span>,<span class="string">'LineWidth'</span>,1)
+0135         plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage), <span class="string">'--m'</span>,<span class="string">'LineWidth'</span>,1);
+0136         plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage)+Sys.w_ub(3), <span class="string">'-m'</span>,<span class="string">'LineWidth'</span>,1)
+0137     <span class="keyword">end</span>
+0138     
+0139     <span class="comment">%  xlabel('Time (hours)')</span>
+0140     ylabel(<span class="string">'Temperatures (°F)'</span>);
+0141     set(gca, <span class="string">'XLim'</span>,XLim , <span class="string">'XTick'</span>, 0:3:nb_stages*24, <span class="string">'FontSize'</span>, 14 );
+0142     
+0143     <span class="comment">% occupancy</span>
+0144     subplot(5,1,4);
+0145     hold on;grid on;
+0146     stairs(time(1:one_stage)/60, Wref(7,1:one_stage), <span class="string">'-k'</span>, <span class="string">'LineWidth'</span>,2);
+0147     legend(<span class="string">'Occupancy'</span>);
+0148     <span class="comment">% xlabel('Time (hours)')</span>
+0149     set(gca, <span class="string">'XLim'</span>, XLim, <span class="string">'YLim'</span>, [-1.1 1.1], <span class="string">'XTick'</span>, 0:3:nb_stages*24, <span class="keyword">...</span>
+0150      <span class="string">'FontSize'</span>, 14, <span class="string">'YTick'</span>, [-1 1], <span class="string">'YTickLabel'</span>, {<span class="string">'empty'</span> <span class="string">'occupied'</span>});
+0151     
+0152  
+0153     subplot(5,1,5);
+0154     hold on;grid on;
+0155     Sys.h.Upast = stairs(Sys.system_data.time/60, Sys.system_data.U(1,:),<span class="string">'LineWidth'</span>,3);
+0156     Sys.h.Umodel = stairs(Sys.model_data.time(1:end-1)/60,Sys.model_data.U(1,:), <span class="string">'--gr'</span>,<span class="string">'LineWidth'</span>,2);
+0157     xlabel(<span class="string">'Time (hours)'</span>)
+0158     ylabel(<span class="string">'u'</span>);
+0159     
+0160     legend(<span class="string">'Input Air Flow (ft^3/min)'</span>);
+0161     set(gca, <span class="string">'XLim'</span>, XLim, <span class="string">'XTick'</span>, 0:3:nb_stages*24, <span class="string">'FontSize'</span>, 14);
+0162     
+0163 <span class="keyword">else</span>
+0164     set(Sys.h.Tpast, <span class="string">'Xdata'</span>, Sys.system_data.time/60, <span class="string">'Ydata'</span>,Sys.system_data.X(5,1:end-1));
+0165     
+0166     set(Sys.h.Toutpast, <span class="string">'Xdata'</span>, Sys.system_data.time(1:2:end)/60, <span class="string">'Ydata'</span>,Sys.system_data.W(3,1:2:end));
+0167     
+0168     set(Sys.h.Tmodel, <span class="string">'Xdata'</span>, Sys.model_data.time/60,<span class="string">'Ydata'</span>, Sys.model_data.X(5,:));
+0169     
+0170     set(Sys.h.Upast, <span class="string">'Xdata'</span>, Sys.system_data.time/60,<span class="string">'Ydata'</span>,  Sys.system_data.U(1,:));
+0171     set(Sys.h.Umodel, <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1)/60,<span class="string">'Ydata'</span>, Sys.model_data.U(1,:));
+0172     
+0173 <span class="keyword">end</span>
+0174 
+0175 <span class="keyword">end</span>
+0176 
+0177</pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

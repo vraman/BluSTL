@@ -42,7 +42,7 @@ This function calls:
 <li><a href="getNotAP.html" class="code" title="function env = getNotAP(env)">getNotAP</a>	getNotAP Create negation of APs in env</li><li><a href="getPoly.html" class="code" title="function poly = getPoly(varargin)">getPoly</a>	poly Creates box polytope from upper/lower bounds</li><li><a href="mergePoly.html" class="code" title="function env = mergePoly(env)">mergePoly</a>	mergePoly Merges polytopes that represent the environment</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../../../matlabicon.gif)">
-<li><a href="../../../examples/quadrotor/getSpecs.html" class="code" title="function [inits] = getSpecs( inits, dim, ex)">getSpecs</a>	% Create the environment</li><li><a href="../../../examples/quadrotor/init_plot.html" class="code" title="function h = init_plot(hist_data,pred_data,Aux,nb_stages,time,legends)">init_plot</a>	</li><li><a href="../../../examples/quadrotor/quad_system.html" class="code" title="">quad_system</a>	</li></ul>
+<li><a href="../../../examples/quadrotor/getSpecs.html" class="code" title="function QS = getSpecs(QS)">getSpecs</a>	% Create the environment</li><li><a href="../../../examples/quadrotor/init_plot.html" class="code" title="function h = init_plot(hist_data,pred_data,Aux,nb_stages,time,legends)">init_plot</a>	</li><li><a href="../../../examples/quadrotor/quad_plot.html" class="code" title="function QS = quad_plot(QS)">quad_plot</a>	quad_plot updates the plots of a quad_system at runtime</li></ul>
 <!-- crossreference -->
 
 
@@ -63,7 +63,7 @@ This function is called by:
 0013 env.AP = struct();
 0014 env.notAP = struct();
 0015 
-0016 e = 0.3;    <span class="comment">% expansion/contraction factor</span>
+0016 e = 0;    <span class="comment">% expansion/contraction factor</span>
 0017 env.util.e = e;
 0018 
 0019 <span class="keyword">if</span> 0 == ex
@@ -156,22 +156,40 @@ This function is called by:
 0106     env.AP.d = <a href="getPoly.html" class="code" title="function poly = getPoly(varargin)">getPoly</a>([7,8, 3,4, 4,6]);
 0107     env.AP.e = <a href="getPoly.html" class="code" title="function poly = getPoly(varargin)">getPoly</a>([4,5, 6,8, 2,3]);
 0108     
-0109 <span class="keyword">else</span>
-0110     error(<span class="string">'Invalid example number.'</span>);
-0111 <span class="keyword">end</span>
-0112 
-0113 env.util.arena = arena;
-0114 env.work.workspace = workspace;
-0115 env.util.dim = dimension(workspace);
-0116 
-0117 env = <a href="getNotAP.html" class="code" title="function env = getNotAP(env)">getNotAP</a>(env);
-0118 
-0119 fprintf(<span class="string">'Reducing polytopes...\n'</span>);
-0120 env.work = <a href="mergePoly.html" class="code" title="function env = mergePoly(env)">mergePoly</a>(env.work);
-0121 env.AP = <a href="mergePoly.html" class="code" title="function env = mergePoly(env)">mergePoly</a>(env.AP);
-0122 env.notAP = <a href="mergePoly.html" class="code" title="function env = mergePoly(env)">mergePoly</a>(env.notAP);
-0123 
-0124 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0109 <span class="keyword">elseif</span> 6 == ex
+0110     xmin = 0;   xmax = 10;
+0111     ymin = 0;   ymax = 10;
+0112     zmin = 0;   zmax = 10;
+0113     arena = [xmin, xmax, ymin, ymax, zmin, zmax];
+0114     workspace = <a href="getPoly.html" class="code" title="function poly = getPoly(varargin)">getPoly</a>(arena);
+0115 
+0116     <span class="comment">% Create labled regions</span>
+0117     obs = [ <a href="getPoly.html" class="code" title="function poly = getPoly(varargin)">getPoly</a>([2,2.5,2,2.5,0,10], e)];
+0118     env.work.unsafe = obs;
+0119     env.work.safe = regiondiff(workspace, obs);   
+0120 
+0121     env.AP.a = <a href="getPoly.html" class="code" title="function poly = getPoly(varargin)">getPoly</a>([0,1,0,1,0,1]);
+0122     env.AP.b = <a href="getPoly.html" class="code" title="function poly = getPoly(varargin)">getPoly</a>([4,5,4,5,4,5]);
+0123     
+0124     <span class="comment">%env.AP.a = getPoly([0.5,1.5,0.5,1.5,0,10]);</span>
+0125     <span class="comment">%env.AP.b = getPoly([4.5,4.5,0.5,1.5,0,10]);</span>
+0126     
+0127 <span class="keyword">else</span>
+0128     error(<span class="string">'Invalid example number.'</span>);
+0129 <span class="keyword">end</span>
+0130 
+0131 env.util.arena = arena;
+0132 env.work.workspace = workspace;
+0133 env.util.dim = dimension(workspace);
+0134 
+0135 env = <a href="getNotAP.html" class="code" title="function env = getNotAP(env)">getNotAP</a>(env);
+0136 
+0137 fprintf(<span class="string">'Reducing polytopes...\n'</span>);
+0138 env.work = <a href="mergePoly.html" class="code" title="function env = mergePoly(env)">mergePoly</a>(env.work);
+0139 env.AP = <a href="mergePoly.html" class="code" title="function env = mergePoly(env)">mergePoly</a>(env.AP);
+0140 env.notAP = <a href="mergePoly.html" class="code" title="function env = mergePoly(env)">mergePoly</a>(env.notAP);
+0141 
+0142 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

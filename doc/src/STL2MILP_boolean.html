@@ -1,0 +1,354 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+                "http://www.w3.org/TR/REC-html40/loose.dtd">
+<html>
+<head>
+  <title>Description of STL2MILP_boolean</title>
+  <meta name="keywords" content="STL2MILP_boolean">
+  <meta name="description" content="STL2MILP_boolean  constructs MILP constraints in YALMIP that compute">
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <meta name="generator" content="m2html v1.5 &copy; 2003-2005 Guillaume Flandin">
+  <meta name="robots" content="index, follow">
+  <link type="text/css" rel="stylesheet" href="../m2html.css">
+</head>
+<body>
+<a name="_top"></a>
+<div><a href="../index.html">Home</a> &gt;  <a href="index.html">src</a> &gt; STL2MILP_boolean.m</div>
+
+<!--<table width="100%"><tr><td align="left"><a href="../index.html"><img alt="<" border="0" src="../left.png">&nbsp;Master index</a></td>
+<td align="right"><a href="index.html">Index for src&nbsp;<img alt=">" border="0" src="../right.png"></a></td></tr></table>-->
+
+<h1>STL2MILP_boolean
+</h1>
+
+<h2><a name="_name"></a>PURPOSE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>STL2MILP_boolean  constructs MILP constraints in YALMIP that compute</strong></div>
+
+<h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="box"><strong>function [F,P] = STL2MILP_boolean(phi,k,ts,var,M) </strong></div>
+
+<h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre class="comment"> STL2MILP_boolean  constructs MILP constraints in YALMIP that compute
+                   the boolean satisfaction for specification phi
+
+ Input: 
+       phi:    an STLformula
+       k:      the length of the trajectory
+       ts:     the interval (in seconds) used for discretizing time
+       var:    a dictionary mapping strings to variables
+       M:       a large positive constant used for big-M constraints  
+
+ Output: 
+       F:  YALMIP constraints
+       P:  YALMIP decision variables representing the boolean satisfaction 
+           over each time step from 1 to k 
+
+ :copyright: TBD
+ :license: TBD</pre></div>
+
+<!-- crossreference -->
+<h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+This function calls:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>	STL2MILP_boolean  constructs MILP constraints in YALMIP that compute</li></ul>
+This function is called by:
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>	STL2MILP_boolean  constructs MILP constraints in YALMIP that compute</li><li><a href="STLC_get_controller.html" class="code" title="function controller = STLC_get_controller(Sys,enc)">STLC_get_controller</a>	STLC_get_controller constructs the controller object for an STLC_lti instance</li></ul>
+<!-- crossreference -->
+
+<h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<ul style="list-style-image:url(../matlabicon.gif)">
+<li><a href="#_sub1" class="code">function [F,z] = pred(st,k,var)</a></li><li><a href="#_sub2" class="code">function [F,P] = and(p_list)</a></li><li><a href="#_sub3" class="code">function [F,P] = or(p_list)</a></li><li><a href="#_sub4" class="code">function [F,P] = not(p_list)</a></li><li><a href="#_sub5" class="code">function [ia, ib] = getIndices(i,a,b,k)</a></li><li><a href="#_sub6" class="code">function [F,P_alw] = always(P, a,b, k)</a></li><li><a href="#_sub7" class="code">function [F,P_ev] = eventually(P, a,b, k)</a></li><li><a href="#_sub8" class="code">function [F,P_until] = until(Pp,Pq,a,b,j)</a></li><li><a href="#_sub9" class="code">function [F,P_until] = until_untimed(Pp,Pq,k)</a></li></ul>
+
+<h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)</a>
+0002 <span class="comment">% STL2MILP_boolean  constructs MILP constraints in YALMIP that compute</span>
+0003 <span class="comment">%                   the boolean satisfaction for specification phi</span>
+0004 <span class="comment">%</span>
+0005 <span class="comment">% Input:</span>
+0006 <span class="comment">%       phi:    an STLformula</span>
+0007 <span class="comment">%       k:      the length of the trajectory</span>
+0008 <span class="comment">%       ts:     the interval (in seconds) used for discretizing time</span>
+0009 <span class="comment">%       var:    a dictionary mapping strings to variables</span>
+0010 <span class="comment">%       M:       a large positive constant used for big-M constraints</span>
+0011 <span class="comment">%</span>
+0012 <span class="comment">% Output:</span>
+0013 <span class="comment">%       F:  YALMIP constraints</span>
+0014 <span class="comment">%       P:  YALMIP decision variables representing the boolean satisfaction</span>
+0015 <span class="comment">%           over each time step from 1 to k</span>
+0016 <span class="comment">%</span>
+0017 <span class="comment">% :copyright: TBD</span>
+0018 <span class="comment">% :license: TBD</span>
+0019 
+0020     <span class="keyword">if</span> (nargin==4);
+0021         M = 1000;
+0022     <span class="keyword">end</span>;
+0023         
+0024     F = [];
+0025     P = [];
+0026     
+0027     <span class="keyword">if</span> ischar(phi.interval)
+0028         interval = [str2num(phi.interval)];
+0029     <span class="keyword">else</span>
+0030         interval = phi.interval;
+0031     <span class="keyword">end</span>
+0032     
+0033     a = interval(1);
+0034     b = interval(2);
+0035     
+0036     <span class="keyword">if</span> a == Inf
+0037         a = k;
+0038     <span class="keyword">end</span>
+0039     <span class="keyword">if</span> b == Inf
+0040         b = k;
+0041     <span class="keyword">end</span>
+0042     
+0043     a = max([0 floor(a/ts)-1]); 
+0044     b = ceil(b/ts)-1; 
+0045        
+0046     <span class="keyword">switch</span> (phi.type)
+0047         
+0048         <span class="keyword">case</span> <span class="string">'predicate'</span>
+0049             [F,P] = <a href="#_sub1" class="code" title="subfunction [F,z] = pred(st,k,var)">pred</a>(phi.st,k,var);
+0050             
+0051         <span class="keyword">case</span> <span class="string">'not'</span>
+0052             [Frest,Prest] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi, k, ts, var,M);
+0053             [Fnot, Pnot] = <a href="#_sub4" class="code" title="subfunction [F,P] = not(p_list)">not</a>(Prest);
+0054             F = [F, Fnot, Frest];
+0055             P = Pnot;
+0056 
+0057         <span class="keyword">case</span> <span class="string">'or'</span>
+0058             [Fdis1,Pdis1] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi1, k, ts, var,M);
+0059             [Fdis2,Pdis2] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi2, k, ts, var,M);
+0060             [For, Por] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list)">or</a>([Pdis1;Pdis2]);
+0061             F = [F, For, Fdis1, Fdis2];
+0062             P = Por;
+0063 
+0064         <span class="keyword">case</span> <span class="string">'and'</span>
+0065             [Fcon1,Pcon1] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi1, k, ts, var,M);
+0066             [Fcon2,Pcon2] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi2, k, ts, var,M);
+0067             [Fand, Pand] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>([Pcon1;Pcon2]);
+0068             F = [F, Fand, Fcon1, Fcon2];
+0069             P = Pand;
+0070 
+0071         <span class="keyword">case</span> <span class="string">'=&gt;'</span>
+0072             [Fant,Pant] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi1, k, ts, var,M);
+0073             [Fcons,Pcons] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi2, k, ts, var,M);
+0074             [Fnotant,Pnotant] = <a href="#_sub4" class="code" title="subfunction [F,P] = not(p_list)">not</a>(Pant);
+0075             [Fimp, Pimp] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list)">or</a>([Pnotant;Pcons]);
+0076             F = [F, Fant, Fnotant, Fcons, Fimp];
+0077             P = Pimp;
+0078             
+0079         <span class="keyword">case</span> <span class="string">'always'</span>
+0080             [Frest,Prest] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi, k, ts, var,M);
+0081             [Falw, Palw] = <a href="#_sub6" class="code" title="subfunction [F,P_alw] = always(P, a,b, k)">always</a>(Prest, a,b, k);
+0082             F = [F, Falw];
+0083             P = [P, Palw];
+0084             F = [F, Frest];
+0085 
+0086         <span class="keyword">case</span> <span class="string">'eventually'</span>
+0087             [Frest,Prest] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi, k, ts, var,M);
+0088             [Fev, Pev] = <a href="#_sub7" class="code" title="subfunction [F,P_ev] = eventually(P, a,b, k)">eventually</a>(Prest, a,b, k);
+0089             F = [F, Fev];
+0090             P = [P, Pev];
+0091             F = [F, Frest];
+0092           
+0093         <span class="keyword">case</span> <span class="string">'until'</span>
+0094             [Fp,Pp] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi1, k, ts, var,M);
+0095             [Fq,Pq] = <a href="STL2MILP_boolean.html" class="code" title="function [F,P] = STL2MILP_boolean(phi,k,ts,var,M)">STL2MILP_boolean</a>(phi.phi2, k, ts, var,M);
+0096             [Funtil, Puntil] = <a href="#_sub8" class="code" title="subfunction [F,P_until] = until(Pp,Pq,a,b,j)">until</a>([Pp,Pq,a,b,k]);
+0097             F = [F, Funtil, Fp, Fq];
+0098             P = Puntil;
+0099     <span class="keyword">end</span>
+0100 <span class="keyword">end</span>
+0101 
+0102 <a name="_sub1" href="#_subfunctions" class="code">function [F,z] = pred(st,k,var)</a>
+0103     <span class="comment">% Enforce constraints based on predicates</span>
+0104     <span class="comment">%</span>
+0105     <span class="comment">% var is the variable dictionary</span>
+0106         
+0107     fnames = fieldnames(var);
+0108     
+0109     <span class="keyword">for</span> ifield= 1:numel(fnames)
+0110         eval([ fnames{ifield} <span class="string">'= var.'</span> fnames{ifield} <span class="string">';'</span>]); 
+0111     <span class="keyword">end</span>          
+0112         
+0113     st = regexprep(st,<span class="string">'\[t\]'</span>,<span class="string">'\(t\)'</span>); <span class="comment">% Breach compatibility ?</span>
+0114     <span class="keyword">if</span> strfind( st, <span class="string">'&lt;'</span>)
+0115         tokens = regexp(st, <span class="string">'(.+)\s*&lt;\s*(.+)'</span>,<span class="string">'tokens'</span>);
+0116         st = [<span class="string">'-('</span> tokens{1}{1} <span class="string">'- ('</span> tokens{1}{2} <span class="string">'))'</span>]; 
+0117     <span class="keyword">end</span>
+0118     <span class="keyword">if</span> strfind(st, <span class="string">'&gt;'</span>)
+0119         tokens = regexp(st, <span class="string">'(.+)\s*&gt;\s*(.+)'</span>,<span class="string">'tokens'</span>);
+0120         st= [ <span class="string">'('</span> tokens{1}{1} <span class="string">')-('</span> tokens{1}{2} <span class="string">')'</span> ];
+0121     <span class="keyword">end</span>
+0122     
+0123     
+0124     F = [];
+0125     zAll = [];
+0126     
+0127     bigM = 1000;
+0128     bigMst1 = <span class="string">'bigM*zAll(:,t)'</span>;
+0129     bigMst2 = <span class="string">'bigM*(1 - zAll(:,t))'</span>;
+0130   
+0131  
+0132     <span class="keyword">for</span> l=1:k
+0133         
+0134         <span class="comment">% the below conditional statements allow specifications to refer to</span>
+0135         <span class="comment">% the previous and next time steps (e.g. when controlling input)</span>
+0136         t_st = st;
+0137         <span class="keyword">if</span> l&lt;k
+0138             t_st = regexprep(t_st,<span class="string">'t+1\)'</span>,[num2str(l+1) <span class="string">'\)'</span>]);
+0139         <span class="keyword">else</span>
+0140             t_st = regexprep(t_st,<span class="string">'t+1\)'</span>,[num2str(l) <span class="string">'\)'</span>]);
+0141         <span class="keyword">end</span>
+0142         <span class="keyword">if</span> l&gt;1
+0143             t_st = regexprep(t_st,<span class="string">'t-1\)'</span>,[num2str(l-1) <span class="string">'\)'</span>]);
+0144         <span class="keyword">else</span>
+0145             t_st = regexprep(t_st,<span class="string">'t-1\)'</span>,[num2str(l) <span class="string">'\)'</span>]);
+0146         <span class="keyword">end</span>
+0147         t_st = regexprep(t_st,<span class="string">'\(t'</span>,[<span class="string">'\('</span>,num2str(l)]);
+0148         t_st = regexprep(t_st,<span class="string">',t\)'</span>,[<span class="string">','</span>,num2str(l) <span class="string">'\)'</span>]);
+0149         
+0150         zl = sdpvar(size(eval(t_st),1),1);
+0151         zAll = [zAll,zl];
+0152         
+0153         bigM_l = regexprep(bigMst1,<span class="string">'\(t'</span>,[<span class="string">'\('</span>,num2str(l)]);
+0154         bigM_l = regexprep(bigM_l,<span class="string">',t\)'</span>,[<span class="string">','</span>,num2str(l) <span class="string">'\)'</span>]);
+0155         t_st1 = [t_st <span class="string">'&lt;='</span> bigM_l];
+0156         F = [F, eval(t_st1)];
+0157         
+0158         bigM_l = regexprep(bigMst2,<span class="string">'\(t'</span>,[<span class="string">'\('</span>,num2str(l)]);
+0159         bigM_l = regexprep(bigM_l,<span class="string">',t\)'</span>,[<span class="string">','</span>,num2str(l) <span class="string">'\)'</span>]);
+0160         t_st2 = [<span class="string">'-('</span> t_st <span class="string">') &lt;= '</span> bigM_l];
+0161         F = [F, eval(t_st2)];
+0162         
+0163     <span class="keyword">end</span>
+0164     <span class="comment">% take the and over all dimension for multi-dimensional signals</span>
+0165     z = sdpvar(1,k);
+0166     <span class="keyword">for</span> i=1:k
+0167         [Fnew, z(:,i)] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>(zAll(:,i));
+0168         F = [F, Fnew];
+0169     <span class="keyword">end</span>
+0170     
+0171 <span class="keyword">end</span>
+0172 
+0173 
+0174 <a name="_sub2" href="#_subfunctions" class="code">function [F,P] = and(p_list)</a>
+0175     k = size(p_list,2);
+0176     m = size(p_list,1);
+0177     
+0178     P = binvar(1,k);
+0179     F = [];
+0180     <span class="keyword">for</span> t=1:k
+0181         F = [F, P(t) &lt;= p_list(:,t)];        
+0182         F = [F, P(t) &gt;= 1 - m + sum(p_list(:,t),1)];
+0183     <span class="keyword">end</span>
+0184 <span class="keyword">end</span>
+0185 
+0186 <a name="_sub3" href="#_subfunctions" class="code">function [F,P] = or(p_list)</a>
+0187     k = size(p_list,2);
+0188     m = size(p_list,1);
+0189     
+0190     P = binvar(1,k);
+0191     F = [];
+0192     <span class="keyword">for</span> t=1:k
+0193         F = [F, P(t) &gt;= p_list(:,t)];        
+0194         F = [F, P(t) &lt;= sum(p_list(:,t),1)];
+0195     <span class="keyword">end</span>
+0196 
+0197 <span class="keyword">end</span>
+0198 
+0199 <a name="_sub4" href="#_subfunctions" class="code">function [F,P] = not(p_list)</a>
+0200     k = size(p_list,2);
+0201     m = size(p_list,1);
+0202     assert( m == 1 )
+0203     P = binvar(1,k);
+0204     F = [P(:) == 1 - p_list(:)];
+0205 <span class="keyword">end</span>
+0206 
+0207 <a name="_sub5" href="#_subfunctions" class="code">function [ia, ib] = getIndices(i,a,b,k)</a>
+0208     ia = min(k,i+a);
+0209     ib = min(k,i+b);
+0210 <span class="keyword">end</span>
+0211 
+0212 <a name="_sub6" href="#_subfunctions" class="code">function [F,P_alw] = always(P, a,b, k)</a>
+0213     F = [];
+0214     P_alw = sdpvar(1,k);
+0215     
+0216     <span class="keyword">for</span> i = 1:k
+0217         [ia, ib] = <a href="#_sub5" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
+0218         [F0,P0] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>(P(ia:ib)');
+0219         F = [F;F0,P_alw(i)==P0];
+0220     <span class="keyword">end</span>
+0221     
+0222 <span class="keyword">end</span>
+0223 
+0224 
+0225 <a name="_sub7" href="#_subfunctions" class="code">function [F,P_ev] = eventually(P, a,b, k)</a>
+0226     F = [];
+0227     P_ev = sdpvar(1,k);
+0228     
+0229     <span class="keyword">for</span> i = 1:k
+0230         [ia, ib] = <a href="#_sub5" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
+0231         [F0,P0] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list)">or</a>(P(ia:ib)');
+0232         F = [F;F0,P_ev(i)==P0];
+0233     <span class="keyword">end</span>
+0234     
+0235 <span class="keyword">end</span>
+0236 
+0237 <a name="_sub8" href="#_subfunctions" class="code">function [F,P_until] = until(Pp,Pq,a,b,j)</a>
+0238     
+0239     <span class="comment">%PhiU[a,b]Psi = G[0,a]Phi /\ F[a,b]Psi /\ F{a}(PhiUPsi)</span>
+0240 
+0241     <span class="comment">%G[0,a]Phi</span>
+0242     [F1,P1] = <a href="#_sub6" class="code" title="subfunction [F,P_alw] = always(P, a,b, k)">always</a>(Pp, 0,a, k);
+0243     
+0244     <span class="comment">%F[a,b]Psi</span>
+0245     [F2,P2] = <a href="#_sub7" class="code" title="subfunction [F,P_ev] = eventually(P, a,b, k)">eventually</a>(Pq, a,b, k);
+0246     
+0247     <span class="comment">%(PhiUPsi)</span>
+0248     [F_unt,P_unt] = <a href="#_sub9" class="code" title="subfunction [F,P_until] = until_untimed(Pp,Pq,k)">until_untimed</a>(Pp,Pq,j,k);
+0249     
+0250     <span class="comment">%F{a}(PhiUPsi)</span>
+0251     [F3,P3] = <a href="#_sub7" class="code" title="subfunction [F,P_ev] = eventually(P, a,b, k)">eventually</a>(P_unt, a,a, k);
+0252     
+0253     <span class="comment">%and</span>
+0254     [F_and,P_until] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>([P1,P2,P3]);
+0255     
+0256     F = [F1,F2,F_unt,F3,F_and];
+0257 <span class="keyword">end</span>
+0258 
+0259 
+0260 
+0261 <a name="_sub9" href="#_subfunctions" class="code">function [F,P_until] = until_untimed(Pp,Pq,k)</a>
+0262     <span class="comment">%(this is the untimed until)</span>
+0263     F = [];
+0264     
+0265     <span class="comment">% Auxiliary until</span>
+0266     P_until_aux = sdpvar(k,1);
+0267     
+0268     <span class="comment">% i=1,...,k-1</span>
+0269     [F0,P0] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>([Pp(1:k-1),P_until_aux(2:k)]);
+0270     [F1,P1] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list)">or</a>([Pq(1:k-1),P0(1:k-1)]);
+0271     F = [F,F0,F1, P_until_aux(1:k-1) == P1];
+0272 
+0273     <span class="comment">% i=k</span>
+0274     F = [F, P_until_aux(k) == Pq(k)];       
+0275 
+0276     <span class="comment">% Main until</span>
+0277     P_until = sdpvar(k,1);   
+0278     <span class="comment">% i=1,...,k-1</span>
+0279     [F0,P0] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>([Pp(1:k-1),P_until(2:k)]);  
+0280     [F1,P1] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list)">or</a>([Pq(1:k-1),P0(1:k-1)]);
+0281     F = [F,F0,F1, P_until(1:k-1) == P1];
+0282 
+0283     <span class="comment">% i=k</span>
+0284     [F0,P0] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>(P_until_aux(2:k)); <span class="comment">% use auxiliary until here</span>
+0285     [F1,P1] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list)">or</a>(P0');
+0286     [F2,P2] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list)">and</a>([Pp(k),P1]);
+0287     [F3,P3] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list)">or</a>([Pq(k),P2]);
+0288     F = [F, F0,F1,F2,F3, P_until(k) == P3]; 
+0289 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+</body>
+</html>

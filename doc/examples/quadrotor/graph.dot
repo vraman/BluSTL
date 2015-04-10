@@ -1,8 +1,9 @@
 /* Created by mdot for Matlab */
 digraph m2html {
   Init_Quads -> getSpecs;
+  quad_system -> getSpecs;
+  quad_system -> quad_plot;
   quad_system -> quad_system;
-  test_quads -> getSpecs;
   test_quads -> quad_system;
 
   Init_Quads [URL="Init_Quads.html"];
@@ -11,6 +12,7 @@ digraph m2html {
   getSpecs2 [URL="getSpecs2.html"];
   init_hist_and_plot_data [URL="init_hist_and_plot_data.html"];
   init_plot [URL="init_plot.html"];
+  quad_plot [URL="quad_plot.html"];
   quad_system [URL="quad_system.html"];
   system_step [URL="system_step.html"];
   test_quads [URL="test_quads.html"];

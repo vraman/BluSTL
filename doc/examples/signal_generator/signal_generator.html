@@ -33,30 +33,66 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="signal_generator.html" class="code" title="">signal_generator</a>	</li><li><a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>	</li></ul>
+<li><a href="signal_generator.html" class="code" title="">signal_generator</a>	</li><li><a href="../../examples/tutorials/signal_generator.html" class="code" title="">signal_generator</a>	</li><li><a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>	</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="signal_generator.html" class="code" title="">signal_generator</a>	</li></ul>
+<li><a href="signal_generator.html" class="code" title="">signal_generator</a>	</li><li><a href="test_encodings.html" class="code" title="">test_encodings</a>	</li><li><a href="test_signal_generator.html" class="code" title="">test_signal_generator</a>	% Create the system</li><li><a href="../../examples/tutorials/signal_generator.html" class="code" title="">signal_generator</a>	</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function    SG= signal_generator()</a></li></ul>
+<li><a href="#_sub1" class="code">function  SG = signal_generator(nu, nw)</a></li><li><a href="#_sub2" class="code">function rob = monitor(SG,phi)</a></li><li><a href="#_sub3" class="code">function rob = monitor_interval(SG,phi)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="signal_generator.html" class="code" title="">signal_generator</a> &lt; <a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>
-0002    
-0003     methods
-0004         <a name="_sub0" href="#_subfunctions" class="code">function    SG= signal_generator()</a>
-0005             A =[];
-0006             B =[];
-0007             C =[];
-0008             D = eye(2);
-0009             SG = SG@<a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>(A,B,C,D);
-0010         <span class="keyword">end</span>
-0011     <span class="keyword">end</span>
-0012     
-0013 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0002     <span class="comment">% this class implements a &quot;signal generator&quot;. It has no dynamics and no</span>
+0003     <span class="comment">% disturbance, so that the control synthesis problem is the same as</span>
+0004     <span class="comment">% finding an input signal that satisfies a given STL formula</span>
+0005     
+0006     methods
+0007         <a name="_sub0" href="#_subfunctions" class="code">function  SG = signal_generator(nu, nw)</a>
+0008             A =[];
+0009             B =[];
+0010             C =[];
+0011             Du = eye(nu);
+0012             Dw = eye(nw);
+0013             SG = SG@<a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>(A,B,[],C,Du,Dw);
+0014         
+0015         <span class="keyword">end</span>
+0016         
+0017         <a name="_sub1" href="#_subfunctions" class="code">function rob = monitor(SG,phi)</a>
+0018              SG.bigM = 1000; 
+0019             SG.h = [];
+0020            SG.stl_list{1} = phi;
+0021            SG.controller = get_controller(SG,<span class="string">'robust'</span>);
+0022            SG.min_rob= -SG.bigM;
+0023            [SG,~,rob] = SG.run_open_loop(SG.controller);
+0024            figure;
+0025            hold on;
+0026            plot(SG.model_data.time, SG.model_data.W(:,1:end))
+0027            plot(SG.model_data.time, rob, <span class="string">'k'</span>, <span class="string">'LineWidth'</span>,2);
+0028          
+0029            
+0030         <span class="keyword">end</span>
+0031 
+0032         <a name="_sub2" href="#_subfunctions" class="code">function rob = monitor_interval(SG,phi)</a>
+0033            SG.bigM = 1000; 
+0034            SG.h = [];
+0035            SG.stl_list{1} = phi;
+0036            SG.controller = get_controller(SG,<span class="string">'interval'</span>);
+0037            SG.min_rob= -1000;
+0038            [SG,~,rob] = SG.run_open_loop(SG.controller);
+0039            figure;
+0040            hold on;
+0041            plot(SG.model_data.time, SG.model_data.W(:,1:end))
+0042            plot(SG.model_data.time, rob, <span class="string">'k'</span>, <span class="string">'LineWidth'</span>,2);
+0043            
+0044         <span class="keyword">end</span>
+0045 
+0046         
+0047     <span class="keyword">end</span>
+0048     
+0049 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -43,14 +43,16 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 HR1 = <a href="hvac_room.html" class="code" title="">hvac_room</a>;
-0002 HR1 = init_control(HR1,12,0, 0);
-0003 HR1= HR1.run_adversarial(HR1.controller, HR1.adversary)
-0004 save2pdf(<span class="string">'hvac_det2.pdf'</span>, gcf)
-0005 
-0006 HR2 = <a href="hvac_room.html" class="code" title="">hvac_room</a>();
-0007 HR2 = init_control(HR2,12,5, 400);
-0008 HR2.run_adversarial(HR2.controller, HR2.adversary)
-0009 save2pdf(<span class="string">'hvac_nondet2.pdf'</span>, gcf)</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0002 HR1 = init_control(HR1,12,0, 400);
+0003 HR1.run_adversarial(HR1.controller, HR1.adversary)
+0004 <span class="comment">%HR1.run_deterministic(HR1.controller);</span>
+0005 <span class="comment">%save2pdf('hvac_det2.pdf', gcf)</span>
+0006 
+0007 HR2 = <a href="hvac_room.html" class="code" title="">hvac_room</a>();
+0008 HR2 = init_control(HR2,12,5, 400);
+0009 HR2.run_adversarial(HR2.controller, HR2.adversary)
+0010 <span class="comment">%HR2.run_deterministic(HR2.controller);</span>
+0011 <span class="comment">%save2pdf('hvac_nondet2.pdf', gcf)</span></pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

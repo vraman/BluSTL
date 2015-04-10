@@ -33,7 +33,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="../../examples/quadrotor/env/envLTL.html" class="code" title="function env = envLTL(ex)">envLTL</a>	envLTL Creates environment (workspace)</li><li><a href="quad_system.html" class="code" title="">quad_system</a>	</li><li><a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>	</li></ul>
+<li><a href="getSpecs.html" class="code" title="function QS = getSpecs(QS)">getSpecs</a>	% Create the environment</li><li><a href="quad_plot.html" class="code" title="function QS = quad_plot(QS)">quad_plot</a>	quad_plot updates the plots of a quad_system at runtime</li><li><a href="quad_system.html" class="code" title="">quad_system</a>	</li><li><a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>	</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../../matlabicon.gif)">
 <li><a href="quad_system.html" class="code" title="">quad_system</a>	</li><li><a href="test_quads.html" class="code" title="">test_quads</a>	</li></ul>
@@ -41,172 +41,231 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function QS = quad_system()</a></li><li><a href="#_sub2" class="code">function QSys = init_control(QSys)</a></li><li><a href="#_sub3" class="code">function QS = update_plots(QS)</a></li></ul>
+<li><a href="#_sub1" class="code">function QS = quad_system()</a></li><li><a href="#_sub2" class="code">function QS = init_control(QS)</a></li><li><a href="#_sub3" class="code">function QS = update_plot(QS)</a></li><li><a href="#_sub4" class="code">function Wn = sensing(QS)</a></li><li><a href="#_sub5" class="code">function QS = simple_plot(QS)</a></li><li><a href="#_sub6" class="code">function Wn = quad_sensing(QS)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
-<div class="fragment"><pre>0001 classdef <a href="quad_system.html" class="code" title="">quad_system</a> &lt; <a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>
+<div class="fragment"><pre>0001 classdef <a href="quad_system.html" class="code" title="">quad_system</a> &lt;<a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>
 0002     
 0003     properties 
-0004     
-0005         env
-0006         controller
-0007     <span class="keyword">end</span>
+0004         
+0005         env;
+0006     <span class="keyword">end</span>
+0007     
 0008     
-0009     
-0010     methods
-0011         
-0012         <span class="comment">% constructor</span>
-0013         <a name="_sub0" href="#_subfunctions" class="code">function QS = quad_system()</a>
-0014             <span class="comment">% Quadrotor linearized about hover (van der Burg 13)</span>
-0015             <span class="comment">% x = (p,v, r,w),     u = (uf,ux,uy)</span>
-0016             <span class="comment">% p = position (m),   v = velocity (m/s)</span>
-0017             <span class="comment">% r = attitude (rad), w = angular velocity (rad/s)</span>
+0009     methods
+0010         <span class="comment">% constructor</span>
+0011         <a name="_sub0" href="#_subfunctions" class="code">function QS = quad_system()</a>
+0012             <span class="comment">% Quadrotor linearized about hover (van der Burg 13)</span>
+0013             <span class="comment">% x = (p,v, r,w),     u = (uf,ux,uy)</span>
+0014             <span class="comment">% p = position (m),   v = velocity (m/s)</span>
+0015             <span class="comment">% r = attitude (rad), w = angular velocity (rad/s)</span>
+0016             <span class="comment">%</span>
+0017             <span class="comment">% Model adapted from LTLOpt (http://www.cds.caltech.edu/~ewolff/ltlopt.html)</span>
 0018             <span class="comment">%</span>
-0019             <span class="comment">% Model adapted from LTLOpt (http://www.cds.caltech.edu/~ewolff/ltlopt.html)</span>
-0020             <span class="comment">%</span>
-0021             <span class="comment">%</span>
-0022             <span class="comment">% Input: 'dt' timestep (sec)</span>
-0023             <span class="comment">%        'N' length of traj</span>
-0024             <span class="comment">%        'dim' workspace dimension (2D or 3D)</span>
-0025             <span class="comment">% Output: 'X' sdpvar for state</span>
-0026             <span class="comment">%         'U' sdpvar for control</span>
-0027             <span class="comment">%         'F' dynamic constraints</span>
-0028             <span class="comment">%         'sys' system info</span>
-0029 
-0030 
-0031             dim=3;
-0032             
-0033             <span class="comment">% Parameters (modified from van der Burg 13)</span>
-0034             g = 9.81;       <span class="comment">% gravity (m/s^2)</span>
-0035             m = 1;          <span class="comment">% mass (kg)</span>
-0036             arm = 0.25;       <span class="comment">% length of rotor arm (m)</span>
-0037             J = 20*m*arm^2;   <span class="comment">% moment of inertia (kg m^2) (est)</span>
+0019             <span class="comment">%</span>
+0020             <span class="comment">% Input: 'dt' timestep (sec)</span>
+0021             <span class="comment">%        'N' length of traj</span>
+0022             <span class="comment">%        'dim' workspace dimension (2D or 3D)</span>
+0023             <span class="comment">% Output: 'X' sdpvar for state</span>
+0024             <span class="comment">%         'U' sdpvar for control</span>
+0025             <span class="comment">%         'F' dynamic constraints</span>
+0026             <span class="comment">%         'sys' system info</span>
+0027 
+0028 
+0029             
+0030             <span class="comment">% Parameters (modified from van der Burg 13)</span>
+0031             g = 9.81;       <span class="comment">% gravity (m/s^2)</span>
+0032             m = 1;          <span class="comment">% mass (kg)</span>
+0033             arm = 0.25;       <span class="comment">% length of rotor arm (m)</span>
+0034             J = 20*m*arm^2;   <span class="comment">% moment of inertia (kg m^2) (est)</span>
+0035 
+0036             tmp = [0 g; -g 0; 0 0];  
+0037            
 0038 
-0039             tmp = [0 g; -g 0; 0 0];  
-0040            
-0041 
-0042             <span class="comment">% System Dynamics</span>
-0043             A = [zeros(3),   eye(3),     zeros(3,2), zeros(3,2); 
-0044                   zeros(3),   zeros(3),   tmp,        zeros(3,2); 
-0045                   zeros(2,3), zeros(2,3), zeros(2),   eye(2);
-0046                   zeros(2,3), zeros(2,3), zeros(2),   zeros(2)];
-0047 
-0048 
-0049             tmp = [0; 0; 1/m];
-0050             Bu = [zeros(3,1) zeros(3,2); 
-0051                   tmp        zeros(3,2); 
-0052                   zeros(2,1) zeros(2,2); 
-0053                   zeros(2,1) arm/J*eye(2)];
-0054            
-0055             <span class="comment">% calls super class constructor</span>
-0056             QS = QS@<a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>(A,Bu);
-0057             
-0058             <span class="comment">% env</span>
-0059             ex=3;
-0060             QS.env = <a href="../../examples/quadrotor/env/envLTL.html" class="code" title="function env = envLTL(ex)">envLTL</a>(ex);
-0061                 
-0062             <span class="comment">% Init controller stuff</span>
+0039             <span class="comment">% System Dynamics</span>
+0040             A = [zeros(3),   eye(3),     zeros(3,2), zeros(3,2); 
+0041                   zeros(3),   zeros(3),   tmp,        zeros(3,2); 
+0042                   zeros(2,3), zeros(2,3), zeros(2),   eye(2);
+0043                   zeros(2,3), zeros(2,3), zeros(2),   zeros(2)];
+0044 
+0045 
+0046             tmp = [0; 0; 1/m];
+0047             Bu = [zeros(3,1) zeros(3,2); 
+0048                   tmp        zeros(3,2); 
+0049                   zeros(2,1) zeros(2,2); 
+0050                   zeros(2,1) arm/J*eye(2)];
+0051               
+0052             numObs = 1;
+0053             
+0054             Bw = zeros(size(Bu,1),numObs); 
+0055             <span class="comment">% complete Bw with 0s column for the number of obstacles</span>
+0056               
+0057             C = [1 zeros(1, 9); 
+0058              0 1 zeros(1, 8);
+0059              0 0 1 zeros(1, 7)];
+0060            
+0061             <span class="comment">% calls super class constructor</span>
+0062             QS = QS@<a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>(A,Bu,Bw,C,[],[]);
 0063             
-0064             
-0065         <span class="keyword">end</span>
-0066                
-0067         <a name="_sub1" href="#_subfunctions" class="code">function QSys = init_control(QSys)</a>
-0068             <span class="comment">%% Controller Initialisation</span>
-0069             <span class="comment">% Time</span>
-0070             QSys.time = 0:1:100; <span class="comment">% time for the dynamics</span>
-0071             QSys.ts=2; <span class="comment">% sampling time for controller</span>
-0072             QSys.L=10;  <span class="comment">% horizon (# of steps)</span>
-0073             QSys.nb_stages=1; <span class="comment">% repeats time</span>
-0074 
-0075             QSys.max_react_iter=100;
-0076             QSys.min_rob = 0.1;
-0077             QSys.lambda_rho = 10;
+0064             QS.xlabel{1} = <span class="string">'x'</span>;
+0065             QS.xlabel{2} = <span class="string">'y'</span>;
+0066             QS.xlabel{3} = <span class="string">'z'</span>;
+0067             QS.xlabel{9} = <span class="string">'vel'</span>;
+0068             QS.xlabel{10} = <span class="string">'omega'</span>;
+0069             <span class="keyword">for</span> i=1:numObs
+0070                 QS.wlabel{i} = strcat(<span class="string">'obs'</span>,int2str(i));
+0071             <span class="keyword">end</span>
+0072             
+0073             <span class="comment">% env</span>
+0074           <span class="comment">%  ex=3;</span>
+0075           <span class="comment">%  QS.env = envLTL(ex);</span>
+0076                 
+0077             <span class="comment">% Init controller stuff</span>
 0078             
-0079             <span class="comment">% Input constraints</span>
-0080             QSys.u_ub(:)=10;
-0081             QSys.u_lb(:)= -10;
-0082             
-0083             <span class="comment">% Initial state</span>
-0084             QSys.x0 = [0.1; 0.1; 0.1; zeros(7,1)];
-0085             
-0086             <span class="comment">%% STL formula</span>
-0087 <span class="comment">%            QSys.stl_list{1} = 'alw_[0,Inf] ( abs(x1(t))&lt;.1 and abs(x2(t))&lt;.1 and abs(x3(t)-1)&lt;.1 )';</span>
-0088             QSys.stl_list{1} = <span class="string">'alw_[0, Inf] ( ( x3(t)&lt;1  =&gt;  ev_[0, 10] (x3(t)&gt;10)) and ((x3(t)&gt;10)  =&gt;  ev_[0, 10] (x3(t)&lt;2)))'</span>;
-0089             QSys.stl_list{2} = <span class="string">'alw_[0,Inf] ( x3(t)&lt;11 and x3(t)&gt;0)'</span>;
-0090 
-0091             <span class="comment">%           QSys.stl_list{3} = 'ev_[0, 10] (  x1(t)&gt;10 ) and ev_[10, 20] (x1(t)&lt;1)';</span>
-0092 <span class="comment">%           QSys.stl_list{4} = 'alw_[0,Inf] ( x1(t)&lt;11 and x1(t)&gt;0)';</span>
-0093             
-0094             <span class="comment">%% Plotting</span>
-0095             QSys.plot_x = [1:3];
-0096             
-0097             <span class="comment">%% Running stuff</span>
-0098             fprintf(<span class="string">'Computing controller...\n'</span>);
+0079             
+0080         <span class="keyword">end</span>
+0081     <span class="keyword">end</span>
+0082     
+0083     methods
+0084         <a name="_sub1" href="#_subfunctions" class="code">function QS = init_control(QS)</a>
+0085             <span class="comment">%% Controller Initialisation</span>
+0086             <span class="comment">% Time</span>
+0087             QS.time = 0:.5:100; <span class="comment">% time for the dynamics</span>
+0088             QS.ts=1; <span class="comment">% sampling time for controller</span>
+0089             QS.L=10;  <span class="comment">% horizon (# of steps)</span>
+0090             QS.nb_stages=2; <span class="comment">% repeats time</span>
+0091 
+0092             QS.max_react_iter=100;
+0093             QS.min_rob = 0.1;
+0094             QS.lambda_rho = 1000;
+0095             
+0096             <span class="comment">% Input constraints</span>
+0097             QS.u_ub(:)=1;
+0098             QS.u_lb(:)= -1;
 0099             
-0100             tic
-0101             QSys.controller = get_controller(QSys);
-0102             toc            
+0100             <span class="comment">% Initial state</span>
+0101             QS.x0 = [0.1; 0.1; 0.1; zeros(7,1)];
+0102             
 0103             
-0104             <span class="comment">%  fprintf('Running closed loop...')</span>
-0105             <span class="comment">%  HR = run_open_loop_adv(HR, controller, adversary);</span>
-0106             <span class="comment">%  HR = run_adversarial(HR, controller, adversary);</span>
-0107             <span class="comment">%  fprintf('\ndone.\n');</span>
-0108 
-0109         <span class="keyword">end</span>
-0110 
-0111         
-0112         <span class="comment">% specialized update_plot for quad_system class</span>
-0113         <a name="_sub2" href="#_subfunctions" class="code">function QS = update_plots(QS)</a>
-0114             
-0115             <span class="keyword">if</span> isempty(QS.h)
-0116                 <span class="comment">%obstacles = QS.env.work.unsafe;</span>
-0117                 <span class="comment">%QS.h.hf = plotEnv(QS.env, obstacles);</span>
-0118                 QS.h.hf = figure;
-0119                 grid on;
-0120                 hold on;
-0121                
-0122                 axis([0 10 0 10 0 10]);
-0123                 zlabel(<span class="string">'z (m)'</span>);
-0124                 QS.h.Ypast3d = plot3(QS.system_data.Y(1,:)', QS.system_data.Y(2,:)', QS.system_data.Y(3,:)', <span class="keyword">...</span>
-0125                 <span class="string">'ob:'</span>,<span class="string">'markersize'</span>, 6, <span class="string">'markerfacecolor'</span>, <span class="string">'b'</span>);
-0126                 QS.h.Ymodel3d = plot3(QS.model_data.Y(1,:),QS.model_data.Y(2,:), QS.model_data.Y(3,:), <span class="keyword">...</span>
-0127                 <span class="string">'ok:'</span>,<span class="string">'markersize'</span>, 6, <span class="string">'markerfacecolor'</span>, <span class="string">'k'</span>);
-0128   
-0129                 QS.h.hbutton=uicontrol(QS.h.hf,<span class="string">'style'</span>,<span class="string">'pushbutton'</span>,<span class="keyword">...</span>
-0130                           <span class="string">'string'</span>,<span class="string">'Stop'</span>,<span class="keyword">...</span>
-0131                           <span class="string">'callback'</span>,<span class="string">'Stop()'</span><span class="keyword">...</span>
-0132                       );        
-0133                   
-0134                 QS.system_data.U(1,:)  
-0135                 
-0136                 QS.h.hf2 = figure;
-0137     
-0138                 lg = {<span class="string">'x'</span>, <span class="string">'y'</span>, <span class="string">'z'</span>};
-0139                 <span class="keyword">for</span> iY = 1:3
-0140                     subplot(3,1,iY);
-0141                     hold on;
-0142                     QS.h.Ypast(iY) = plot(QS.system_data.time, QS.system_data.Y(iY,:));
-0143                     QS.h.Ymodel(iY) = plot(QS.model_data.time,QS.model_data.Y(iY,:), <span class="string">'--r'</span>);
-0144                     ylabel(lg{iY});
-0145                 <span class="keyword">end</span>
-0146                 
-0147             <span class="keyword">else</span>
-0148                 
-0149                 set(QS.h.Ymodel3d,<span class="string">'XData'</span>, QS.model_data.Y(1,:), <span class="string">'YData'</span>, QS.model_data.Y(2,:), <span class="string">'ZData'</span>, QS.model_data.Y(3,:));
-0150                 set(QS.h.Ypast3d,<span class="string">'XData'</span>, QS.system_data.Y(1,:), <span class="string">'YData'</span>, QS.system_data.Y(2,:), <span class="string">'ZData'</span>, QS.system_data.Y(3,:));
-0151                 <span class="keyword">for</span> iY = 1:3
-0152                     set(QS.h.Ypast(iY),<span class="string">'XData'</span>, QS.system_data.time, <span class="string">'YData'</span>, QS.system_data.Y(iY,:));
-0153                     set(QS.h.Ymodel(iY),<span class="string">'XData'</span>, QS.model_data.time, <span class="string">'YData'</span>, QS.model_data.Y(iY,:));
-0154                 <span class="keyword">end</span>
-0155                 
-0156             <span class="keyword">end</span>
-0157             
-0158         <span class="keyword">end</span>
-0159         
+0104             <span class="comment">%% STL formula</span>
+0105             
+0106 
+0107              QS.stl_list = {<span class="string">'alw (x(t)&lt;10 and x(t)&gt;0)'</span>,<span class="string">'alw (y(t)&lt;10 and y(t)&gt;0)'</span>,<span class="string">'alw (z(t)&lt;10 and z(t)&gt;0)'</span>};
+0108              
+0109              QS.stl_list{end+1} = <span class="string">'alw ((x(t) &lt; 1)  =&gt; (ev_[0, 5] (x(t) &gt; 5)))'</span>;
+0110              QS.stl_list{end+1} = <span class="string">'alw ((x(t) &gt; 5)  =&gt; (ev_[0, 5] (x(t) &lt; 1)))'</span>;
+0111              QS.stl_list{end+1} = <span class="string">'alw ((y(t) &lt; 1)  =&gt; (ev_[0, 5] (y(t) &gt; 5)))'</span>;
+0112              QS.stl_list{end+1} = <span class="string">'alw ((y(t) &gt; 5)  =&gt; (ev_[0, 5] (y(t) &lt; 1)))'</span>;
+0113 
+0114              
+0115 <span class="comment">%             QS.stl_list{end+1} = 'alw ((obs1(t)&lt;0) or ((x(t)&lt;2) or (y(t)&lt;2)))';</span>
+0116              
+0117 <span class="comment">%             QS.stl_list{2} = '(ev_[0, 10] (x3(t)&gt;10))';</span>
+0118 <span class="comment">%             QS.stl_list{2} = 'alw ((z(t)&lt;1)  =&gt; (ev_[0, 10] (z(t)&gt;10)))';</span>
+0119 <span class="comment">%             QS.stl_list{3} = 'alw ((z(t)&gt;10) =&gt; (ev_[0, 10] (z(t)&lt;1)))';</span>
+0120 
+0121 <span class="comment">%             QS.stl_list{end+1} = 'alw ((x(t) &lt; 1 and y(t) &lt; 1)  =&gt; (ev_[0, 10] (x(t) &gt; 5 and y(t) &gt; 5)))';</span>
+0122 <span class="comment">%             QS.stl_list{end+1} = 'alw ((x(t) &gt; 5 and y(t) &gt; 5)  =&gt; (ev_[0, 10] (x(t) &lt; 1 and y(t) &lt; 1)))';</span>
+0123 <span class="comment">%</span>
+0124 <span class="comment">%             % NOR THIS</span>
+0125 <span class="comment">%             QS.stl_list{end+1} = 'alw ((X(1:2,t) &lt; 1)  =&gt; (ev_[0, 5] (X(1:2,t) &gt; 5)))';</span>
+0126 <span class="comment">%             QS.stl_list{end+1} = 'alw ((X(1:2,t) &gt; 5)  =&gt; (ev_[0, 5] (X(1:2,t) &lt; 1)))';</span>
+0127              
+0128             
+0129             QS = <a href="getSpecs.html" class="code" title="function QS = getSpecs(QS)">getSpecs</a>(QS);
+0130             <span class="comment">%QS.stl_list{:}</span>
+0131             
+0132             <span class="comment">%% Plotting</span>
+0133             QS.plot_x = [3];
+0134             QS.plot_y=[];
+0135             
+0136             <span class="comment">%% Running stuff</span>
+0137             fprintf(<span class="string">'Computing controller...\n'</span>);
+0138             
+0139             tic
+0140             QS.controller = get_controller(QS, <span class="string">'interval'</span>);
+0141             toc            
+0142           
+0143 
+0144         <span class="keyword">end</span>
+0145         
+0146        <a name="_sub2" href="#_subfunctions" class="code">function QS = update_plot(QS)</a>
+0147            QS = <a href="quad_plot.html" class="code" title="function QS = quad_plot(QS)">quad_plot</a>(QS);
+0148        <span class="keyword">end</span>
+0149         
+0150 <span class="comment">%         function obj = get_objective(Sys, X, Y, U,W, rho,wr)</span>
+0151 <span class="comment">%            obj = 1;</span>
+0152 <span class="comment">%         end</span>
+0153 
+0154         <a name="_sub3" href="#_subfunctions" class="code">function Wn = sensing(QS)</a>
+0155                 Wn = <a href="#_sub6" class="code" title="subfunction Wn = quad_sensing(QS)">quad_sensing</a>(QS);
+0156         <span class="keyword">end</span>
+0157         
+0158     <span class="keyword">end</span>
+0159 <span class="keyword">end</span>
 0160         
-0161         
-0162     <span class="keyword">end</span>
-0163 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0161         <span class="comment">% specialized update_plot for quad_system class</span>
+0162         <a name="_sub4" href="#_subfunctions" class="code">function QS = simple_plot(QS)</a>
+0163             
+0164             <span class="keyword">if</span> isempty(QS.h)
+0165                 <span class="comment">%obstacles = QS.env.work.unsafe;</span>
+0166                 <span class="comment">%QS.h.hf = plotEnv(QS.env, obstacles);</span>
+0167                 QS.h.hf = figure;
+0168                 grid on;
+0169                 hold on;
+0170                
+0171                 axis([0 10 0 10 0 10]);
+0172                 zlabel(<span class="string">'z (m)'</span>);
+0173                 QS.h.Ypast3d = plot3(QS.system_data.Y(1,:)', QS.system_data.Y(2,:)', QS.system_data.Y(3,:)', <span class="keyword">...</span>
+0174                 <span class="string">'ob:'</span>,<span class="string">'markersize'</span>, 6, <span class="string">'markerfacecolor'</span>, <span class="string">'b'</span>);
+0175                 QS.h.Ymodel3d = plot3(QS.model_data.Y(1,:),QS.model_data.Y(2,:), QS.model_data.Y(3,:), <span class="keyword">...</span>
+0176                 <span class="string">'ok:'</span>,<span class="string">'markersize'</span>, 6, <span class="string">'markerfacecolor'</span>, <span class="string">'k'</span>);
+0177   
+0178                 QS.h.hbutton=uicontrol(QS.h.hf,<span class="string">'style'</span>,<span class="string">'pushbutton'</span>,<span class="keyword">...</span>
+0179                           <span class="string">'string'</span>,<span class="string">'Stop'</span>,<span class="keyword">...</span>
+0180                           <span class="string">'callback'</span>,<span class="string">'Stop()'</span><span class="keyword">...</span>
+0181                       );        
+0182                   
+0183                 QS.h.hf2 = figure;
+0184     
+0185                 lg = {<span class="string">'x'</span>, <span class="string">'y'</span>, <span class="string">'z'</span>};
+0186                 <span class="keyword">for</span> iY = 1:3
+0187                     subplot(3,1,iY);
+0188                     hold on;
+0189                     QS.h.Ypast(iY) = plot(QS.system_data.time, QS.system_data.Y(iY,:));
+0190                     QS.h.Ymodel(iY) = plot(QS.model_data.time(:,1:end-1),QS.model_data.Y(iY,:), <span class="string">'--r'</span>);
+0191                     ylabel(lg{iY});
+0192                 <span class="keyword">end</span>
+0193                 
+0194             <span class="keyword">else</span>
+0195                 
+0196                 set(QS.h.Ymodel3d,<span class="string">'XData'</span>, QS.model_data.Y(1,:), <span class="string">'YData'</span>, QS.model_data.Y(2,:), <span class="string">'ZData'</span>, QS.model_data.Y(3,:));
+0197                 set(QS.h.Ypast3d,<span class="string">'XData'</span>, QS.system_data.Y(1,:), <span class="string">'YData'</span>, QS.system_data.Y(2,:), <span class="string">'ZData'</span>, QS.system_data.Y(3,:));
+0198                 <span class="keyword">for</span> iY = 1:3
+0199                     set(QS.h.Ypast(iY),<span class="string">'XData'</span>, QS.system_data.time, <span class="string">'YData'</span>, QS.system_data.Y(iY,:));
+0200                     set(QS.h.Ymodel(iY),<span class="string">'XData'</span>, QS.model_data.time, <span class="string">'YData'</span>, QS.model_data.Y(iY,:));
+0201                 <span class="keyword">end</span>
+0202                 
+0203             <span class="keyword">end</span>
+0204         <span class="keyword">end</span>
+0205         
+0206         <a name="_sub5" href="#_subfunctions" class="code">function Wn = quad_sensing(QS)</a>
+0207             
+0208             x_now = QS.x0;
+0209             nw = QS.nw;
+0210             Wn = zeros(1,2*QS.L);
+0211             
+0212             <span class="keyword">for</span> i=1:nw <span class="comment">% for each obstacle</span>
+0213                 <span class="keyword">if</span> x_now(1) &gt; 1 <span class="comment">% TODO: define sensing criteria for each obstacle</span>
+0214                     Wn(iwx,:) = ones(1,2*QS.L);
+0215                 <span class="keyword">end</span>
+0216             <span class="keyword">end</span>
+0217 
+0218         <span class="keyword">end</span>
+0219 
+0220 
+0221     
+0222</pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

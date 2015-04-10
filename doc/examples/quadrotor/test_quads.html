@@ -33,7 +33,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="getSpecs.html" class="code" title="function [inits] = getSpecs( inits, dim, ex)">getSpecs</a>	% Create the environment</li><li><a href="quad_system.html" class="code" title="">quad_system</a>	</li></ul>
+<li><a href="quad_system.html" class="code" title="">quad_system</a>	</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../../matlabicon.gif)">
 </ul>
@@ -43,51 +43,14 @@ This function is called by:
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 addpath env
-0002 
-0003 <span class="comment">%% Create the system</span>
-0004 QuadSys = <a href="quad_system.html" class="code" title="">quad_system</a>();
-0005 
-0006 <span class="comment">%% Controller Initialisation</span>
-0007 <span class="comment">% Time</span>
-0008 QuadSys.time = 0:1:100; <span class="comment">% time for the dynamics</span>
-0009 QuadSys.ts=0.5; <span class="comment">% sampling time for controller</span>
-0010 QuadSys.L=10;  <span class="comment">% horizon (# of steps)</span>
-0011 QuadSys.nb_stages=1; <span class="comment">% repeats time</span>
-0012 
-0013 <span class="comment">%% Disturbance signal</span>
-0014 w = 0*ones(1,numel(QuadSys.time));
-0015 Wref = w;
-0016 QuadSys.Wref = w;
-0017 
-0018 <span class="comment">% Bounds</span>
-0019 QuadSys.u_ub = 10;
-0020 QuadSys.u_lb = -10;
-0021 QuadSys.u_delta = 20;
-0022 
-0023 <span class="comment">%% STL formula</span>
-0024 
-0025 QuadSys = <a href="getSpecs.html" class="code" title="function [inits] = getSpecs( inits, dim, ex)">getSpecs</a>(QuadSys,3,3);
-0026 
-0027 QuadSys.rob = 0.01;    
-0028 QuadSys.bigM = 1000;
-0029 
-0030 <span class="comment">%% Initial state</span>
-0031 QuadSys.x0 = [2; 2; 0.0; zeros(7,1)];
-0032 
-0033 <span class="keyword">return</span>;
-0034 <span class="comment">%% running stuff</span>
-0035 fprintf(<span class="string">'Computing controller...'</span>);
-0036 controller = get_controller(QuadSys);
-0037 fprintf(<span class="string">'\nRunning...'</span>);
-0038 run_deterministic(QuadSys, controller);
-0039 fprintf(<span class="string">'\ndone.\n'</span>);
-0040 
-0041 
-0042 
-0043 
-0044 
-0045 
-0046</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0002 <span class="comment">%% Create the system</span>
+0003 QS = <a href="quad_system.html" class="code" title="">quad_system</a>;
+0004 QS = init_control(QS);
+0005 <span class="comment">%QS = QS.run_open_loop(QS.controller);</span>
+0006 
+0007 QS = QS.run_deterministic(QS.controller);
+0008 
+0009</pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

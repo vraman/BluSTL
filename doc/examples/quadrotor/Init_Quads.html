@@ -47,7 +47,7 @@
 <h2><a name="_cross"></a>CROSS-REFERENCE INFORMATION <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 This function calls:
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="getSpecs.html" class="code" title="function [inits] = getSpecs( inits, dim, ex)">getSpecs</a>	% Create the environment</li></ul>
+<li><a href="getSpecs.html" class="code" title="function QS = getSpecs(QS)">getSpecs</a>	% Create the environment</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../../matlabicon.gif)">
 </ul>
@@ -116,7 +116,7 @@ This function is called by:
 0058 inits.u_delta=Inf;   
 0059 
 0060 <span class="comment">%% Create the STL specifications</span>
-0061 inits = <a href="getSpecs.html" class="code" title="function [inits] = getSpecs( inits, dim, ex)">getSpecs</a>(inits);
+0061 inits = <a href="getSpecs.html" class="code" title="function QS = getSpecs(QS)">getSpecs</a>(inits);
 0062 
 0063 <span class="comment">%% Disturbance signal</span>
 0064 w = 0*ones(1,numel(inits.time));
@@ -135,6 +135,6 @@ This function is called by:
 0077 warning(<span class="string">'off'</span>,<span class="string">'YALMIP:strict'</span>);
 0078 
 0079 save(<span class="string">'Quad_data.mat'</span>);</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

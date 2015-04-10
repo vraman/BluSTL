@@ -42,7 +42,7 @@ This function calls:
 </ul>
 This function is called by:
 <ul style="list-style-image:url(../../../matlabicon.gif)">
-<li><a href="../../../examples/quadrotor/init_plot.html" class="code" title="function h = init_plot(hist_data,pred_data,Aux,nb_stages,time,legends)">init_plot</a>	</li></ul>
+<li><a href="../../../examples/quadrotor/init_plot.html" class="code" title="function h = init_plot(hist_data,pred_data,Aux,nb_stages,time,legends)">init_plot</a>	</li><li><a href="../../../examples/quadrotor/quad_plot.html" class="code" title="function QS = quad_plot(QS)">quad_plot</a>	quad_plot updates the plots of a quad_system at runtime</li></ul>
 <!-- crossreference -->
 
 
@@ -77,7 +77,7 @@ This function is called by:
 0027 <span class="keyword">end</span>
 0028 ops.shade = 0.65;
 0029 ops.color = [0.5, 0.5, 0.5];
-0030 plot(minus(obstacles, Q), ops);
+0030 <span class="comment">%plot(minus(obstacles, Q), ops);</span>
 0031 
 0032 
 0033 <span class="comment">%% Plot APs</span>
@@ -87,39 +87,38 @@ This function is called by:
 0037     ops.color = <span class="string">'g'</span>;
 0038     plot(env.AP.(fields{i}), ops);
 0039     <span class="keyword">for</span> j = 1:length(env.AP.(fields{i}))
-0040 
-0041         pts = extreme(env.AP.(fields{i})(j));
-0042         <span class="keyword">if</span> env.util.dim == 2
-0043             text(mean(pts(:,1)), mean(pts(:,2)), fields{i}, <span class="string">'FontSize'</span>,18)
-0044         <span class="keyword">else</span>
-0045             text(mean(pts(:,1)), mean(pts(:,2)), mean(pts(:,3)), fields{i}, <span class="string">'FontSize'</span>,18)
-0046         <span class="keyword">end</span>
-0047     <span class="keyword">end</span>
-0048 <span class="keyword">end</span>
-0049 
-0050 <span class="comment">% Plot formatting</span>
-0051 axis(env.util.arena)
-0052 grid off
-0053 hXLabel = xlabel(<span class="string">'x (m)'</span>);
-0054 hYLabel = ylabel(<span class="string">'y (m)'</span>);
-0055 set( gca                       , <span class="keyword">...</span>
-0056     <span class="string">'FontName'</span>   , <span class="string">'Helvetica'</span> );
-0057 set([hXLabel, hYLabel], <span class="keyword">...</span>
-0058     <span class="string">'FontName'</span>   , <span class="string">'AvantGarde'</span>);
-0059 set([hXLabel, hYLabel]  , <span class="keyword">...</span>
-0060     <span class="string">'FontSize'</span>   , 18          );
-0061 set(gca, <span class="keyword">...</span>
-0062   <span class="string">'Box'</span>         , <span class="string">'off'</span>     , <span class="keyword">...</span>
-0063   <span class="string">'TickDir'</span>     , <span class="string">'out'</span>     , <span class="keyword">...</span>
-0064   <span class="string">'XColor'</span>      , [.1 .1 .1], <span class="keyword">...</span>
-0065   <span class="string">'YColor'</span>      , [.1 .1 .1], <span class="keyword">...</span>
-0066   <span class="string">'LineWidth'</span>   , 1         , <span class="keyword">...</span>
-0067   <span class="string">'FontSize'</span>    , 16);
-0068 
-0069 grid on
-0070 drawnow
-0071 
-0072 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0040         pts = extreme(env.AP.(fields{i})(j));
+0041         <span class="keyword">if</span> env.util.dim == 2
+0042             text(mean(pts(:,1)), mean(pts(:,2)), fields{i}, <span class="string">'FontSize'</span>,18)
+0043         <span class="keyword">else</span>
+0044             text(mean(pts(:,1)), mean(pts(:,2)), mean(pts(:,3)), fields{i}, <span class="string">'FontSize'</span>,18)
+0045         <span class="keyword">end</span>
+0046     <span class="keyword">end</span>
+0047 <span class="keyword">end</span>
+0048 
+0049 <span class="comment">% Plot formatting</span>
+0050 axis(env.util.arena)
+0051 grid off
+0052 hXLabel = xlabel(<span class="string">'x (m)'</span>);
+0053 hYLabel = ylabel(<span class="string">'y (m)'</span>);
+0054 set( gca                       , <span class="keyword">...</span>
+0055     <span class="string">'FontName'</span>   , <span class="string">'Helvetica'</span> );
+0056 set([hXLabel, hYLabel], <span class="keyword">...</span>
+0057     <span class="string">'FontName'</span>   , <span class="string">'AvantGarde'</span>);
+0058 set([hXLabel, hYLabel]  , <span class="keyword">...</span>
+0059     <span class="string">'FontSize'</span>   , 18          );
+0060 set(gca, <span class="keyword">...</span>
+0061   <span class="string">'Box'</span>         , <span class="string">'off'</span>     , <span class="keyword">...</span>
+0062   <span class="string">'TickDir'</span>     , <span class="string">'out'</span>     , <span class="keyword">...</span>
+0063   <span class="string">'XColor'</span>      , [.1 .1 .1], <span class="keyword">...</span>
+0064   <span class="string">'YColor'</span>      , [.1 .1 .1], <span class="keyword">...</span>
+0065   <span class="string">'LineWidth'</span>   , 1         , <span class="keyword">...</span>
+0066   <span class="string">'FontSize'</span>    , 16);
+0067 
+0068 grid on
+0069 drawnow
+0070 
+0071 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

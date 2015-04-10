@@ -53,7 +53,7 @@ This function calls:
 <li><a href="STL2MILP_robust.html" class="code" title="function [F,P] = STL2MILP_robust(phi,k,ts,var,M)">STL2MILP_robust</a>	STL2MILP_robust  constructs MILP constraints in YALMIP that compute</li></ul>
 This function is called by:
 <ul style="list-style-image:url(../matlabicon.gif)">
-<li><a href="STL2MILP_robust.html" class="code" title="function [F,P] = STL2MILP_robust(phi,k,ts,var,M)">STL2MILP_robust</a>	STL2MILP_robust  constructs MILP constraints in YALMIP that compute</li><li><a href="STLC_get_adversary.html" class="code" title="function adversary = STLC_get_adversary(Sys)">STLC_get_adversary</a>	STLC_get_adversary    constructs the controller object for the adversarial</li><li><a href="STLC_get_controller.html" class="code" title="function controller = STLC_get_controller(Sys)">STLC_get_controller</a>	STLC_get_controller constructs the controller object for an STLC_lti instance</li></ul>
+<li><a href="STL2MILP_robust.html" class="code" title="function [F,P] = STL2MILP_robust(phi,k,ts,var,M)">STL2MILP_robust</a>	STL2MILP_robust  constructs MILP constraints in YALMIP that compute</li><li><a href="STLC_get_adversary.html" class="code" title="function adversary = STLC_get_adversary(Sys)">STLC_get_adversary</a>	STLC_get_adversary    constructs the controller object for the adversarial</li><li><a href="STLC_get_controller.html" class="code" title="function controller = STLC_get_controller(Sys,enc)">STLC_get_controller</a>	STLC_get_controller constructs the controller object for an STLC_lti instance</li></ul>
 <!-- crossreference -->
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
@@ -186,142 +186,148 @@ This function is called by:
 0123          
 0124     F = [];
 0125     
-0126     zAll = [];
+0126     z = [];
 0127     <span class="keyword">for</span> l=1:k
 0128         t_st = st;
 0129         t_st = regexprep(t_st,<span class="string">'t\)'</span>,[num2str(l) <span class="string">'\)'</span>]);
-0130         
-0131         zl = sdpvar(size(eval(t_st),1),size(eval(t_st),2));
-0132         zl = eval(t_st); 
-0133         zAll = [zAll,zl];
-0134     <span class="keyword">end</span>
-0135     
-0136     <span class="comment">% take the and over all dimension for multi-dimensional signals</span>
-0137     z = sdpvar(1,k);
-0138     <span class="keyword">for</span> i=1:k
-0139         [Fnew, z(:,i)] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list,M)">and</a>(zAll(:,i),M);
-0140         F = [F, Fnew];
-0141     <span class="keyword">end</span>
-0142 <span class="keyword">end</span>
-0143 
-0144 <span class="comment">% BOOLEAN OPERATIONS</span>
-0145 
-0146 <a name="_sub2" href="#_subfunctions" class="code">function [F,P] = and(p_list,M)</a>
-0147     [F,P] = <a href="#_sub8" class="code" title="subfunction [F,P] = min_r(p_list,M)">min_r</a>(p_list,M);
+0130         <span class="comment">%zl = sdpvar(size(eval(t_st),1),size(eval(t_st),2)); % is that</span>
+0131         <span class="comment">% necessary ??</span>
+0132         <span class="keyword">try</span> 
+0133             zl = eval(t_st);
+0134         <span class="keyword">end</span>
+0135         z = [z,zl];
+0136     <span class="keyword">end</span>
+0137     
+0138     <span class="comment">% ALEX: I don't like/understand the following commented lines.</span>
+0139     <span class="comment">%       it sure creates lots of constraints where none are needed.</span>
+0140            
+0141     
+0142     <span class="comment">% take the and over all dimension for multi-dimensional signals</span>
+0143     <span class="comment">%z = sdpvar(1,k);</span>
+0144     <span class="comment">%for i=1:k</span>
+0145     <span class="comment">%    [Fnew, z(:,i)] = and(zAll(:,i),M);</span>
+0146     <span class="comment">%    F = [F, Fnew];</span>
+0147     <span class="comment">%end</span>
 0148 <span class="keyword">end</span>
 0149 
-0150 
-0151 <a name="_sub3" href="#_subfunctions" class="code">function [F,P] = or(p_list,M)</a>
-0152      [F,P] = <a href="#_sub9" class="code" title="subfunction [F,P] = max_r(p_list,M)">max_r</a>(p_list,M);
-0153 <span class="keyword">end</span>
-0154 
+0150 <span class="comment">% BOOLEAN OPERATIONS</span>
+0151 
+0152 <a name="_sub2" href="#_subfunctions" class="code">function [F,P] = and(p_list,M)</a>
+0153     [F,P] = <a href="#_sub8" class="code" title="subfunction [F,P] = min_r(p_list,M)">min_r</a>(p_list,M);
+0154 <span class="keyword">end</span>
 0155 
-0156 <a name="_sub4" href="#_subfunctions" class="code">function [F,P] = not(p_list)</a>
-0157     k = size(p_list,2);
-0158     m = size(p_list,1);
-0159     P = sdpvar(1,k);
-0160     F = [P(:) == -p_list(:)];
-0161 <span class="keyword">end</span>
-0162 
-0163 
-0164 <span class="comment">% TEMPORAL OPERATIONS</span>
-0165 
-0166 <a name="_sub5" href="#_subfunctions" class="code">function [F,P_alw] = always(P, a,b, k,M)</a>
-0167     F = [];
-0168     P_alw = sdpvar(1,k);
-0169     
-0170     <span class="keyword">for</span> i = 1:k
-0171         [ia, ib] = <a href="#_sub11" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
-0172         [F0,P0] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list,M)">and</a>(P(ia:ib)',M);
-0173         F = [F;F0,P_alw(i)==P0];
-0174     <span class="keyword">end</span>
+0156 
+0157 <a name="_sub3" href="#_subfunctions" class="code">function [F,P] = or(p_list,M)</a>
+0158      [F,P] = <a href="#_sub9" class="code" title="subfunction [F,P] = max_r(p_list,M)">max_r</a>(p_list,M);
+0159 <span class="keyword">end</span>
+0160 
+0161 
+0162 <a name="_sub4" href="#_subfunctions" class="code">function [F,P] = not(p_list)</a>
+0163     k = size(p_list,2);
+0164     m = size(p_list,1);
+0165     P = sdpvar(1,k);
+0166     F = [P(:) == -p_list(:)];
+0167 <span class="keyword">end</span>
+0168 
+0169 
+0170 <span class="comment">% TEMPORAL OPERATIONS</span>
+0171 
+0172 <a name="_sub5" href="#_subfunctions" class="code">function [F,P_alw] = always(P, a,b, k,M)</a>
+0173     F = [];
+0174     P_alw = sdpvar(1,k);
 0175     
-0176 <span class="keyword">end</span>
-0177 
-0178 
-0179 <a name="_sub6" href="#_subfunctions" class="code">function [F,P_ev] = eventually(P, a,b, k,M)</a>
-0180     F = [];
-0181     P_ev = sdpvar(1,k);
-0182     
-0183     <span class="keyword">for</span> i = 1:k
-0184         [ia, ib] = <a href="#_sub11" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
-0185         [F0,P0] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list,M)">or</a>(P(ia:ib)',M);
-0186         F = [F;F0,P_ev(i)==P0];
-0187     <span class="keyword">end</span>
+0176     <span class="keyword">for</span> i = 1:k
+0177         [ia, ib] = <a href="#_sub11" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
+0178         [F0,P0] = <a href="#_sub2" class="code" title="subfunction [F,P] = and(p_list,M)">and</a>(P(ia:ib)',M);
+0179         F = [F;F0,P_alw(i)==P0];
+0180     <span class="keyword">end</span>
+0181     
+0182 <span class="keyword">end</span>
+0183 
+0184 
+0185 <a name="_sub6" href="#_subfunctions" class="code">function [F,P_ev] = eventually(P, a,b, k,M)</a>
+0186     F = [];
+0187     P_ev = sdpvar(1,k);
 0188     
-0189 <span class="keyword">end</span>
-0190 
-0191 
-0192 <a name="_sub7" href="#_subfunctions" class="code">function [F,P_until] = until(Pp,Pq,a,b,k,M)</a>
-0193     
-0194     F = [];
-0195     P_until = sdpvar(1,k);
-0196     
-0197     <span class="keyword">for</span> i = 1:k
-0198         [ia, ib] = <a href="#_sub11" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
-0199         F0 = []; 
-0200         P0 = [];
-0201         <span class="keyword">for</span> j = ia:ib
-0202             [F1,P1] = <a href="#_sub10" class="code" title="subfunction [F,P] = until_mins(i,j,Pp,Pq,M)">until_mins</a>(i,j,Pp,Pq,M);
-0203             F0 = [F0, F1];
-0204             P0 = [P0, P1];
-0205         <span class="keyword">end</span>
-0206         [F4,P4] = <a href="#_sub9" class="code" title="subfunction [F,P] = max_r(p_list,M)">max_r</a>(P0);
-0207         F = [F;F0,F4,P_until(i)==P4];
-0208     <span class="keyword">end</span>
-0209     
-0210 <span class="keyword">end</span>
-0211 
-0212 
-0213 <span class="comment">% UTILITY FUNCTIONS</span>
-0214 
-0215 <a name="_sub8" href="#_subfunctions" class="code">function [F,P] = min_r(p_list,M)</a>
-0216     
-0217     k = size(p_list,2);
-0218     m = size(p_list,1);
-0219     
-0220     P = sdpvar(1,k);
-0221     z = binvar(m,k);
-0222      
-0223     F = [sum(z,1) == ones(1,k)];
-0224     <span class="keyword">for</span> t=1:k
-0225         <span class="keyword">for</span> i=1:m
-0226             F = [F, P(1,t) &lt;= p_list(i,t)];     
-0227             F = [F, p_list(i,t) - (1-z(i,t))*M &lt;= P(t) &lt;= p_list(i,t) + (1-z(i,t))*M];
-0228         <span class="keyword">end</span>
-0229     <span class="keyword">end</span>
-0230 <span class="keyword">end</span>
-0231 
-0232 <a name="_sub9" href="#_subfunctions" class="code">function [F,P] = max_r(p_list,M)</a>
-0233 
-0234     k = size(p_list,2);
-0235     m = size(p_list,1);
-0236     
-0237     P = sdpvar(1,k);
-0238     z = binvar(m,k);
-0239     
-0240     F = [sum(z,1) == ones(1,k)];
-0241     <span class="keyword">for</span> t=1:k
-0242         <span class="keyword">for</span> i=1:m
-0243             F = [F, P(1,t) &gt;= p_list(i,t)];     
-0244             F = [F, p_list(i,t) - (1-z(i,t))*M &lt;= P(t) &lt;= p_list(i,t) + (1-z(i,t))*M];
-0245         <span class="keyword">end</span>
-0246     <span class="keyword">end</span>
-0247 <span class="keyword">end</span>
-0248 
-0249 <a name="_sub10" href="#_subfunctions" class="code">function [F,P] = until_mins(i,j,Pp,Pq,M)</a>
-0250     [F0,P0] = <a href="#_sub8" class="code" title="subfunction [F,P] = min_r(p_list,M)">min_r</a>(Pp(i:j)',M);
-0251     [F1,P] = <a href="#_sub8" class="code" title="subfunction [F,P] = min_r(p_list,M)">min_r</a>([Pq(j),P0],M);
-0252     F = [F0,F1];
+0189     <span class="keyword">for</span> i = 1:k
+0190         [ia, ib] = <a href="#_sub11" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
+0191         [F0,P0] = <a href="#_sub3" class="code" title="subfunction [F,P] = or(p_list,M)">or</a>(P(ia:ib)',M);
+0192         F = [F;F0,P_ev(i)==P0];
+0193     <span class="keyword">end</span>
+0194     
+0195 <span class="keyword">end</span>
+0196 
+0197 
+0198 <a name="_sub7" href="#_subfunctions" class="code">function [F,P_until] = until(Pp,Pq,a,b,k,M)</a>
+0199     
+0200     F = [];
+0201     P_until = sdpvar(1,k);
+0202     
+0203     <span class="keyword">for</span> i = 1:k
+0204         [ia, ib] = <a href="#_sub11" class="code" title="subfunction [ia, ib] = getIndices(i,a,b,k)">getIndices</a>(i,a,b,k);
+0205         F0 = []; 
+0206         P0 = [];
+0207         <span class="keyword">for</span> j = ia:ib
+0208             [F1,P1] = <a href="#_sub10" class="code" title="subfunction [F,P] = until_mins(i,j,Pp,Pq,M)">until_mins</a>(i,j,Pp,Pq,M);
+0209             F0 = [F0, F1];
+0210             P0 = [P0, P1];
+0211         <span class="keyword">end</span>
+0212         [F4,P4] = <a href="#_sub9" class="code" title="subfunction [F,P] = max_r(p_list,M)">max_r</a>(P0);
+0213         F = [F;F0,F4,P_until(i)==P4];
+0214     <span class="keyword">end</span>
+0215     
+0216 <span class="keyword">end</span>
+0217 
+0218 
+0219 <span class="comment">% UTILITY FUNCTIONS</span>
+0220 
+0221 <a name="_sub8" href="#_subfunctions" class="code">function [F,P] = min_r(p_list,M)</a>
+0222     
+0223     k = size(p_list,2);
+0224     m = size(p_list,1);
+0225     
+0226     P = sdpvar(1,k);
+0227     z = binvar(m,k);
+0228      
+0229     F = [sum(z,1) == ones(1,k)];
+0230     <span class="keyword">for</span> t=1:k
+0231         <span class="keyword">for</span> i=1:m
+0232             F = [F, P(1,t) &lt;= p_list(i,t)];     
+0233             F = [F, p_list(i,t) - (1-z(i,t))*M &lt;= P(t) &lt;= p_list(i,t) + (1-z(i,t))*M];
+0234         <span class="keyword">end</span>
+0235     <span class="keyword">end</span>
+0236 <span class="keyword">end</span>
+0237 
+0238 <a name="_sub9" href="#_subfunctions" class="code">function [F,P] = max_r(p_list,M)</a>
+0239 
+0240     k = size(p_list,2);
+0241     m = size(p_list,1);
+0242     
+0243     P = sdpvar(1,k);
+0244     z = binvar(m,k);
+0245     
+0246     F = [sum(z,1) == ones(1,k)];
+0247     <span class="keyword">for</span> t=1:k
+0248         <span class="keyword">for</span> i=1:m
+0249             F = [F, P(1,t) &gt;= p_list(i,t)];     
+0250             F = [F, p_list(i,t) - (1-z(i,t))*M &lt;= P(t) &lt;= p_list(i,t) + (1-z(i,t))*M];
+0251         <span class="keyword">end</span>
+0252     <span class="keyword">end</span>
 0253 <span class="keyword">end</span>
 0254 
-0255 <a name="_sub11" href="#_subfunctions" class="code">function [ia, ib] = getIndices(i,a,b,k)</a>
-0256     ia = min(k,i+a);
-0257     ib = min(k,i+b);
-0258 <span class="keyword">end</span>
-0259 
+0255 <a name="_sub10" href="#_subfunctions" class="code">function [F,P] = until_mins(i,j,Pp,Pq,M)</a>
+0256     [F0,P0] = <a href="#_sub8" class="code" title="subfunction [F,P] = min_r(p_list,M)">min_r</a>(Pp(i:j)',M);
+0257     [F1,P] = <a href="#_sub8" class="code" title="subfunction [F,P] = min_r(p_list,M)">min_r</a>([Pq(j),P0],M);
+0258     F = [F0,F1];
+0259 <span class="keyword">end</span>
 0260 
-0261</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0261 <a name="_sub11" href="#_subfunctions" class="code">function [ia, ib] = getIndices(i,a,b,k)</a>
+0262     ia = min(k,i+a);
+0263     ib = min(k,i+b);
+0264 <span class="keyword">end</span>
+0265 
+0266 
+0267</pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -24,7 +24,7 @@
 <div class="box"><strong>STLC_run_open_loop        runs an open-loop optimal control problem</strong></div>
 
 <h2><a name="_synopsis"></a>SYNOPSIS <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="box"><strong>function [Sys, params] = STLC_run_open_loop(Sys, controller) </strong></div>
+<div class="box"><strong>function [Sys, params, rob] = STLC_run_open_loop(Sys, controller) </strong></div>
 
 <h2><a name="_description"></a>DESCRIPTION <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
 <div class="fragment"><pre class="comment"> STLC_run_open_loop        runs an open-loop optimal control problem 
@@ -59,7 +59,7 @@ This function is called by:
 <li><a href="#_sub1" class="code">function compute_input()</a></li><li><a href="#_sub2" class="code">function update_hist_data()</a></li><li><a href="#_sub3" class="code">function Stop()</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../up.png"></a></h2>
-<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Sys, params] = STLC_run_open_loop(Sys, controller)</a>
+<div class="fragment"><pre>0001 <a name="_sub0" href="#_subfunctions" class="code">function [Sys, params, rob] = STLC_run_open_loop(Sys, controller)</a>
 0002 <span class="comment">% STLC_run_open_loop        runs an open-loop optimal control problem</span>
 0003 <span class="comment">%                           for the system described by Sys, using the</span>
 0004 <span class="comment">%                           provided controller optimizer object over the</span>
@@ -80,140 +80,142 @@ This function is called by:
 0019 <span class="keyword">global</span> StopRequest
 0020 StopRequest=0;
 0021 
-0022 rob = Sys.min_rob;
-0023 
-0024 <span class="comment">%% Time</span>
-0025 sys = Sys.sys;
-0026 ts=Sys.ts; <span class="comment">% sampling time</span>
-0027 L=Sys.L;  <span class="comment">% horizon (# of steps)</span>
-0028 time = Sys.time; <span class="comment">% time for the date</span>
-0029 time_d = (0:2*L-1)*ts; <span class="comment">% discretized time for the controller</span>
-0030 
-0031 <span class="comment">%% System dimensions and variables</span>
-0032 Sys.sysd = c2d(sys,ts);
-0033 
-0034 x0 = Sys.x0;
-0035 nu=Sys.nu;
-0036 nx=Sys.nx;
-0037 nw=Sys.nw;
-0038 ny=Sys.ny;
-0039 
-0040 <span class="comment">%%  Solving for the first horizon L</span>
-0041 M = Sys.bigM; <span class="comment">% big M</span>
-0042 
-0043 <span class="keyword">if</span> isempty(Sys.Wref)
-0044     Sys.Wref = 0*time;
-0045 <span class="keyword">end</span>
-0046 Wref = Sys.Wref;
-0047 <span class="keyword">for</span> iwx=1:nw
-0048     Wn(iwx,:) = interp1( time , Wref(iwx,:)', time_d)';
-0049 <span class="keyword">end</span>
-0050 
-0051 <span class="comment">% Initialize discrete data for the controller and environment</span>
-0052 
-0053 donen = zeros(1,2*L-1); <span class="comment">% done(1:k) = 1 iff everything has been computed up to step k</span>
-0054 pn = -1*M*ones(1,L);    <span class="comment">% for activating robustness constraints</span>
-0055 Un = zeros(nu,2*L-1);
-0056 Xn = zeros(max(nx,1),2*L);
-0057 <span class="keyword">if</span> (nx&gt;0)
-0058   Xn(:,1) = x0;           <span class="comment">% only X0 is already computed</span>
-0059 <span class="keyword">end</span>
-0060 pn(1) = rob;
-0061 
-0062 Upred = zeros(nu,2*L-1);
-0063 Xpred = zeros(nx,2*L);
-0064 
-0065 u_new = [];
-0066 w_new = [];
-0067 x_new = [];
-0068 y_new = [];
-0069 time_new = 0;
-0070 params = {};
-0071 
-0072 <span class="comment">% call solver</span>
-0073 
-0074 <span class="comment">%% Init system and model data</span>
-0075 Sys.system_data=struct;
-0076 Sys.model_data=struct;
-0077 
+0022 rob= 0;
+0023 min_rob = Sys.min_rob;
+0024 
+0025 <span class="comment">%% Time</span>
+0026 sys = Sys.sys;
+0027 ts=Sys.ts; <span class="comment">% sampling time</span>
+0028 L=Sys.L;  <span class="comment">% horizon (# of steps)</span>
+0029 time = Sys.time; <span class="comment">% time for the date</span>
+0030 time_d = (0:2*L-1)*ts; <span class="comment">% discretized time for the controller</span>
+0031 
+0032 <span class="comment">%% System dimensions and variables</span>
+0033 Sys.sysd = c2d(sys,ts);
+0034 
+0035 x0 = Sys.x0;
+0036 nu=Sys.nu;
+0037 nx=Sys.nx;
+0038 nw=Sys.nw;
+0039 ny=Sys.ny;
+0040 
+0041 <span class="comment">%%  Solving for the first horizon L</span>
+0042 M = Sys.bigM; <span class="comment">% big M</span>
+0043 
+0044 <span class="keyword">if</span> isempty(Sys.Wref)
+0045     Sys.Wref = 0*time;
+0046 <span class="keyword">end</span>
+0047 Wref = Sys.Wref;
+0048 <span class="keyword">for</span> iwx=1:nw
+0049     Wn(iwx,:) = interp1( time , Wref(iwx,:)', time_d)';
+0050 <span class="keyword">end</span>
+0051 
+0052 <span class="comment">% Initialize discrete data for the controller and environment</span>
+0053 
+0054 donen = zeros(1,2*L-1); <span class="comment">% done(1:k) = 1 iff everything has been computed up to step k</span>
+0055 pn = -1*M*ones(1,L);    <span class="comment">% for activating robustness constraints</span>
+0056 Un = zeros(nu,2*L-1);
+0057 Xn = zeros(max(nx,1),2*L);
+0058 <span class="keyword">if</span> (nx&gt;0)
+0059   Xn(:,1) = x0;           <span class="comment">% only X0 is already computed</span>
+0060 <span class="keyword">end</span>
+0061 pn(1) = min_rob;
+0062 
+0063 Upred = zeros(nu,2*L-1);
+0064 Xpred = zeros(nx,2*L);
+0065 
+0066 u_new = [];
+0067 w_new = [];
+0068 x_new = [];
+0069 y_new = [];
+0070 time_new = 0;
+0071 params = {};
+0072 
+0073 <span class="comment">% call solver</span>
+0074 
+0075 <span class="comment">%% Init system and model data</span>
+0076 Sys.system_data=struct;
+0077 Sys.model_data=struct;
 0078 
-0079 Sys.system_data.time = [];
-0080 Sys.system_data.U = [];
-0081 Sys.system_data.X = x0;
-0082 Sys.system_data.Y = [];
-0083 Sys.system_data.W = []; 
-0084 
-0085 Sys.model_data.time = time_d;
-0086 Sys.model_data.X = repmat(0*time_d(1:end), [nx 1]);
-0087 Sys.model_data.Y = repmat(0*time_d(1:end-1), [ny 1]);
-0088 Sys.model_data.U = repmat(0*time_d(1:end-1), [nu 1]);
-0089 Sys.model_data.W = Wn;
-0090 
-0091 time_new = 0;
-0092 <a href="#_sub1" class="code" title="subfunction compute_input()">compute_input</a>();
-0093 
-0094 u_new = Upred(:,1);
-0095 w_new = Wn(:,1);
-0096 [x_new, y_new] =  <a href="../examples/quadrotor/system_step.html" class="code" title="function x1 = system_step(sysd, x0, u0, w0)">system_step</a>(Sys, x0, u_new, w_new);
-0097 
-0098 <a href="#_sub2" class="code" title="subfunction update_hist_data()">update_hist_data</a>();
-0099 Sys = update_plot(Sys);
-0100 
-0101 k=1;
-0102 <span class="keyword">while</span> (k &lt; 2*L-1)
-0103 
-0104     k = k+1;
-0105     x0 = x_new;
-0106     time_new = time_new+ts;
-0107     u_new = Upred(:,k);
-0108     w_new = Wn(:,k);
-0109     [x_new, y_new] =  <a href="../examples/quadrotor/system_step.html" class="code" title="function x1 = system_step(sysd, x0, u0, w0)">system_step</a>(Sys, x0, u_new, w_new);
-0110        
-0111     <span class="comment">%% Update plots</span>
-0112     <a href="#_sub2" class="code" title="subfunction update_hist_data()">update_hist_data</a>();
-0113     Sys= update_plot(Sys);
-0114  
-0115 <span class="keyword">end</span>
-0116 
-0117     <a name="_sub1" href="#_subfunctions" class="code">function compute_input()</a>
-0118         params{end+1} = {time_d,donen,pn,Xn,Un,Wn};
-0119         [sol_control, errorflag1] = controller{{donen,pn,Xn,Un,Wn}};
-0120         <span class="keyword">if</span>(errorflag1==0)  <span class="comment">% found a good control</span>
-0121             <span class="comment">%disp(['Yalmip: ' yalmiperror(errorflag1)])</span>
-0122             Upred = sol_control{1};
-0123             Xpred = sol_control{2};
-0124         <span class="keyword">elseif</span> (errorflag1==1 || errorflag1==15||errorflag1==12)  <span class="comment">% some error, infeasibility or else</span>
-0125             disp([<span class="string">'Yalmip error (disturbance too bad ?): '</span> yalmiperror(errorflag1)]); <span class="comment">% probably there is no controller for this w</span>
-0126         <span class="keyword">else</span>
-0127             disp([<span class="string">'Yalmip error: '</span> yalmiperror(errorflag1)]); <span class="comment">% some other error</span>
-0128         <span class="keyword">end</span>
-0129                
-0130     <span class="keyword">end</span>
-0131 
-0132     <a name="_sub2" href="#_subfunctions" class="code">function update_hist_data()</a>
-0133         
-0134         Sys.system_data.time(end+1) = time_new;
-0135         Sys.system_data.U(:,end+1) = u_new;
-0136         Sys.system_data.X(:,end+1) = x_new;
-0137         Sys.system_data.Y(:,end+1) = y_new;
-0138         Sys.system_data.W(:,end+1) = w_new;
-0139     
-0140         
-0141         Sys.model_data.time = time_d;
-0142         Sys.model_data.X = double(Xpred);
-0143         Sys.model_data.Y = [Sys.sysd.C*double(Xpred(:,1:end-1)) + Sys.sysd.D*[double(Upred); double(Wn(:,1:end-1))]];       
-0144         Sys.model_data.U = double(Upred);
-0145         Sys.model_data.W = Wn;
-0146  
-0147     <span class="keyword">end</span>
-0148 
-0149 <span class="keyword">end</span>
+0079 
+0080 Sys.system_data.time = [];
+0081 Sys.system_data.U = [];
+0082 Sys.system_data.X = x0;
+0083 Sys.system_data.Y = [];
+0084 Sys.system_data.W = []; 
+0085 
+0086 Sys.model_data.time = time_d;
+0087 Sys.model_data.X = repmat(0*time_d(1:end), [nx 1]);
+0088 Sys.model_data.Y = repmat(0*time_d(1:end-1), [ny 1]);
+0089 Sys.model_data.U = repmat(0*time_d(1:end-1), [nu 1]);
+0090 Sys.model_data.W = Wn;
+0091 
+0092 time_new = 0;
+0093 <a href="#_sub1" class="code" title="subfunction compute_input()">compute_input</a>();
+0094 
+0095 u_new = Upred(:,1);
+0096 w_new = Wn(:,1);
+0097 [x_new, y_new] =  <a href="../examples/quadrotor/system_step.html" class="code" title="function x1 = system_step(sysd, x0, u0, w0)">system_step</a>(Sys, x0, u_new, w_new);
+0098 
+0099 <a href="#_sub2" class="code" title="subfunction update_hist_data()">update_hist_data</a>();
+0100 Sys = update_plot(Sys);
+0101 
+0102 k=1;
+0103 <span class="keyword">while</span> (k &lt; 2*L-1)
+0104 
+0105     k = k+1;
+0106     x0 = x_new;
+0107     time_new = time_new+ts;
+0108     u_new = Upred(:,k);
+0109     w_new = Wn(:,k);
+0110     [x_new, y_new] =  <a href="../examples/quadrotor/system_step.html" class="code" title="function x1 = system_step(sysd, x0, u0, w0)">system_step</a>(Sys, x0, u_new, w_new);
+0111        
+0112     <span class="comment">%% Update plots</span>
+0113     <a href="#_sub2" class="code" title="subfunction update_hist_data()">update_hist_data</a>();
+0114     Sys= update_plot(Sys);
+0115  
+0116 <span class="keyword">end</span>
+0117 
+0118     <a name="_sub1" href="#_subfunctions" class="code">function compute_input()</a>
+0119         params{end+1} = {time_d,donen,pn,Xn,Un,Wn};
+0120         [sol_control, errorflag1] = controller{{donen,pn,Xn,Un,Wn}};
+0121         <span class="keyword">if</span>(errorflag1==0)  <span class="comment">% found a good control</span>
+0122             <span class="comment">%disp(['Yalmip: ' yalmiperror(errorflag1)])</span>
+0123             Upred = sol_control{1};
+0124             Xpred = sol_control{2};
+0125             rob = sol_control{3};
+0126         <span class="keyword">elseif</span> (errorflag1==1 || errorflag1==15||errorflag1==12)  <span class="comment">% some error, infeasibility or else</span>
+0127             disp([<span class="string">'Yalmip error (disturbance too bad ?): '</span> yalmiperror(errorflag1)]); <span class="comment">% probably there is no controller for this w</span>
+0128         <span class="keyword">else</span>
+0129             disp([<span class="string">'Yalmip error: '</span> yalmiperror(errorflag1)]); <span class="comment">% some other error</span>
+0130         <span class="keyword">end</span>
+0131                
+0132     <span class="keyword">end</span>
+0133 
+0134     <a name="_sub2" href="#_subfunctions" class="code">function update_hist_data()</a>
+0135         
+0136         Sys.system_data.time(end+1) = time_new;
+0137         Sys.system_data.U(:,end+1) = u_new;
+0138         Sys.system_data.X(:,end+1) = x_new;
+0139         Sys.system_data.Y(:,end+1) = y_new;
+0140         Sys.system_data.W(:,end+1) = w_new;
+0141     
+0142         
+0143         Sys.model_data.time = time_d;
+0144         Sys.model_data.X = double(Xpred);
+0145         Sys.model_data.Y = [Sys.sysd.C*double(Xpred(:,1:end-1)) + Sys.sysd.D*[double(Upred); double(Wn(:,1:end-1))]];       
+0146         Sys.model_data.U = double(Upred);
+0147         Sys.model_data.W = Wn;
+0148  
+0149     <span class="keyword">end</span>
 0150 
-0151 <a name="_sub3" href="#_subfunctions" class="code">function Stop()</a>
-0152 <span class="keyword">global</span> StopRequest;
-0153 StopRequest = true;
-0154 <span class="keyword">end</span>
-0155</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0151 <span class="keyword">end</span>
+0152 
+0153 <a name="_sub3" href="#_subfunctions" class="code">function Stop()</a>
+0154 <span class="keyword">global</span> StopRequest;
+0155 StopRequest = true;
+0156 <span class="keyword">end</span>
+0157</pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -59,41 +59,40 @@ This function is called by:
 0015 <span class="comment">% Input constraints</span>
 0016 SC.u_lb=-1;
 0017 SC.u_ub=1;
-0018 SC.u_delta=Inf; 
-0019 
-0020 <span class="comment">% Disturbance signal</span>
-0021 w = 0*SC.time;
-0022 w(1:5) =-2;
-0023 Wref = w;
-0024 
-0025 SC.Wref = Wref;
-0026 SC.w_lb(:) = -.1;
-0027 SC.w_ub(:) = .1;
-0028 
-0029 <span class="comment">%% Initial state</span>
-0030 X1 = [-10 0]';
-0031 X2 = [10 0]';
-0032 X0 = [X1; X2];
-0033 SC.x0 = X0;
-0034 
-0035 <span class="comment">%% STL formula</span>
-0036 SC.stl_list = {<span class="string">'alw_[0, Inf] ( (abs( X(1,t) - X(3,t) ) &lt; 2) =&gt; alw_[0, 2] ( abs(X(2,t)) &lt; 0.1 ))'</span>}; 
+0018 
+0019 <span class="comment">% Disturbance signal</span>
+0020 w = 0*SC.time;
+0021 w(1:5) =-2;
+0022 Wref = w;
+0023 
+0024 SC.Wref = Wref;
+0025 SC.w_lb(:) = -.1;
+0026 SC.w_ub(:) = .1;
+0027 
+0028 <span class="comment">%% Initial state</span>
+0029 X1 = [-10 0]';
+0030 X2 = [10 0]';
+0031 X0 = [X1; X2];
+0032 SC.x0 = X0;
+0033 
+0034 <span class="comment">%% STL formula</span>
+0035 SC.stl_list = {<span class="string">'alw_[0, Inf] ( (abs( x1(t) - x3(t) ) &lt; 2) =&gt; alw_[0, 2] ( abs(x2(t)) &lt; 0.1 ))'</span>}; 
+0036 
 0037 
-0038 
-0039 <span class="comment">%% Plotting</span>
-0040 <span class="comment">%SC.plot_x = 5;</span>
-0041 <span class="comment">%SC.plot_w = [7];</span>
-0042 
-0043 <span class="comment">%% Running stuff</span>
-0044 fprintf(<span class="string">'Computing controller...\n'</span>);
-0045 controller = get_controller(SC);
-0046 fprintf(<span class="string">'Computing adversary...\n'</span>);
-0047 adversary = get_adversary(SC) 
-0048 fprintf(<span class="string">'Running...'</span>)
-0049 <span class="comment">%SC = run_open_loop(SC, controller);</span>
-0050 SC = run_adversarial(SC, controller, adversary)
-0051 fprintf(<span class="string">'\ndone.\n'</span>);
-0052</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0038 <span class="comment">%% Plotting</span>
+0039 <span class="comment">%SC.plot_x = 5;</span>
+0040 <span class="comment">%SC.plot_w = [7];</span>
+0041 
+0042 <span class="comment">%% Running stuff</span>
+0043 fprintf(<span class="string">'Computing controller...\n'</span>);
+0044 controller = get_controller(SC);
+0045 fprintf(<span class="string">'Computing adversary...\n'</span>);
+0046 adversary = get_adversary(SC) 
+0047 fprintf(<span class="string">'Running...'</span>)
+0048 <span class="comment">%SC = run_open_loop(SC, controller);</span>
+0049 SC = run_adversarial(SC, controller, adversary)
+0050 fprintf(<span class="string">'\ndone.\n'</span>);
+0051</pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

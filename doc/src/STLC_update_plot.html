@@ -57,75 +57,86 @@ This function is called by:
 0007 <span class="comment">% :copyright: TBD</span>
 0008 <span class="comment">% :license: TBD</span>
 0009 
-0010 <span class="keyword">if</span> isempty(Sys.h)
-0011     Sys.h.hf = figure;
-0012     nb_plots = numel(Sys.plot_x)+numel(Sys.plot_y)+numel(Sys.plot_u)+numel(Sys.plot_w);
-0013     cur_plot = 1;
-0014     
-0015     <span class="keyword">for</span> iX = Sys.plot_x
-0016         subplot(nb_plots,1,cur_plot);
-0017         hold on; grid on;
-0018         Sys.h.Xpast(iX) = plot(Sys.system_data.time, Sys.system_data.X(iX,:));
-0019         Sys.h.Xmodel(iX) = plot(Sys.model_data.time,Sys.model_data.X(iX,:), <span class="string">'--r'</span>);
-0020         ylabel(Sys.xlabel{iX});
-0021         cur_plot = cur_plot+1;
-0022     <span class="keyword">end</span>
-0023     
-0024     <span class="keyword">for</span> iY = Sys.plot_y
-0025         subplot(nb_plots,1,cur_plot);
-0026         hold on;grid on;
-0027         Sys.h.Ypast(iY) = plot(Sys.system_data.time(1:end-1), Sys.system_data.Y(iY,:));
-0028         Sys.h.Ymodel(iY) = plot(Sys.model_data.time(1:end-1), Sys.model_data.Y(iY,:), <span class="string">'--r'</span>);
-0029         ylabel(Sys.ylabel{iY});
-0030         cur_plot = cur_plot+1;
-0031     <span class="keyword">end</span>
-0032     
-0033     <span class="keyword">for</span> iU = Sys.plot_u
-0034         subplot(nb_plots,1,cur_plot);
-0035         hold on;grid on;
-0036         Sys.h.Upast(iU) = stairs(Sys.system_data.time(1:end-1), Sys.system_data.U(iU,:));
-0037         Sys.h.Umodel(iU) = stairs(Sys.model_data.time(1:end-1),Sys.model_data.U(iU,:), <span class="string">'--r'</span>);
-0038         ylabel([Sys.ulabel{iU}]);
-0039         cur_plot = cur_plot+1;
-0040     <span class="keyword">end</span>
-0041     
-0042     <span class="keyword">for</span> iW = Sys.plot_w
-0043         subplot(nb_plots,1,cur_plot);
-0044         hold on;grid on;
-0045         Sys.h.Wpast(iW) = plot(Sys.system_data.time, Sys.system_data.W(iW,:));
-0046         Sys.h.Wmodel(iW) = plot(Sys.model_data.time(1:end-1),Sys.model_data.W(iW,1:end-1), <span class="string">'--r'</span>);
-0047         ylabel(Sys.wlabel{iW});
-0048         cur_plot = cur_plot+1;
-0049     <span class="keyword">end</span>
-0050     
-0051     Sys.h.hbutton=uicontrol(Sys.h.hf,<span class="string">'style'</span>,<span class="string">'pushbutton'</span>,<span class="keyword">...</span>
-0052         <span class="string">'string'</span>,<span class="string">'Stop'</span>,<span class="keyword">...</span>
-0053         <span class="string">'callback'</span>,<span class="string">'Stop()'</span><span class="keyword">...</span>
-0054         );
-0055 <span class="keyword">else</span>
-0056     
-0057     <span class="keyword">for</span> iX = Sys.plot_x
-0058         set(Sys.h.Xpast(iX), <span class="string">'Xdata'</span>, Sys.system_data.time, <span class="string">'Ydata'</span>,Sys.system_data.X(iX,:));
-0059         set(Sys.h.Xmodel(iX), <span class="string">'Xdata'</span>, Sys.model_data.time,<span class="string">'Ydata'</span>, Sys.model_data.X(iX,:));
-0060     <span class="keyword">end</span>
-0061     
-0062     <span class="keyword">for</span> iY = Sys.plot_y
-0063         set(Sys.h.Ypast(iY), <span class="string">'Xdata'</span>, Sys.system_data.time(1:end-1),<span class="string">'Ydata'</span>,  Sys.system_data.Y(iY,:));
-0064         set(Sys.h.Ymodel(iY), <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1),<span class="string">'Ydata'</span>, Sys.model_data.Y(iY,:));
+0010 system_style= {<span class="string">'LineWidth'</span>,2};
+0011 model_style = {<span class="string">'--g'</span>};
+0012 axis_style = {<span class="string">'Fontsize'</span>,12}; 
+0013 
+0014 <span class="keyword">if</span> isempty(Sys.h)
+0015     Sys.h.hf = figure;
+0016     nb_plots = numel(Sys.plot_x)+numel(Sys.plot_y)+numel(Sys.plot_u)+numel(Sys.plot_w);
+0017     cur_plot = 1;
+0018     
+0019     <span class="keyword">for</span> iX = Sys.plot_x
+0020         subplot(nb_plots,1,cur_plot);
+0021         hold on; grid on;
+0022         Sys.h.Xpast(iX) = plot(Sys.system_data.time, Sys.system_data.X(iX,1:end-1),system_style{:});
+0023         Sys.h.Xmodel(iX) = plot(Sys.model_data.time,Sys.model_data.X(iX,:), model_style{:});
+0024         ylabel(Sys.xlabel{iX});
+0025         cur_plot = cur_plot+1;
+0026         set(gca,axis_style{:});
+0027 
+0028     <span class="keyword">end</span>
+0029     
+0030     <span class="keyword">for</span> iY = Sys.plot_y
+0031         subplot(nb_plots,1,cur_plot);
+0032         hold on;grid on;
+0033         Sys.h.Ypast(iY) = plot(Sys.system_data.time, Sys.system_data.Y(iY,:),system_style{:});
+0034         Sys.h.Ymodel(iY) = plot(Sys.model_data.time(1:end-1), Sys.model_data.Y(iY,:), model_style{:});
+0035         ylabel(Sys.ylabel{iY});
+0036         cur_plot = cur_plot+1;
+0037         set(gca,axis_style{:});
+0038     <span class="keyword">end</span>
+0039     
+0040     <span class="keyword">for</span> iU = Sys.plot_u
+0041         subplot(nb_plots,1,cur_plot);
+0042         hold on;grid on;
+0043         Sys.h.Upast(iU) = stairs(Sys.system_data.time, Sys.system_data.U(iU,:),system_style{:});
+0044         Sys.h.Umodel(iU) = stairs(Sys.model_data.time(1:end-1),Sys.model_data.U(iU,:), model_style{:});
+0045         ylabel([Sys.ulabel{iU}]);
+0046         cur_plot = cur_plot+1;
+0047         set(gca,axis_style{:});
+0048     <span class="keyword">end</span>
+0049     
+0050     <span class="keyword">for</span> iW = Sys.plot_w
+0051         subplot(nb_plots,1,cur_plot);
+0052         hold on;grid on;
+0053         Sys.h.Wpast(iW) = plot(Sys.system_data.time, Sys.system_data.W(iW,:),system_style{:});
+0054         Sys.h.Wmodel(iW) = plot(Sys.model_data.time(1:end-1),Sys.model_data.W(iW,1:end-1), model_style{:});
+0055         ylabel(Sys.wlabel{iW});
+0056         cur_plot = cur_plot+1;
+0057         set(gca,axis_style{:});
+0058     <span class="keyword">end</span>
+0059     
+0060     <span class="keyword">if</span> Sys.stop_button
+0061         Sys.h.hbutton=uicontrol(Sys.h.hf,<span class="string">'style'</span>,<span class="string">'pushbutton'</span>,<span class="keyword">...</span>
+0062             <span class="string">'string'</span>,<span class="string">'Stop'</span>,<span class="keyword">...</span>
+0063             <span class="string">'callback'</span>,<span class="string">'Stop()'</span><span class="keyword">...</span>
+0064             );
 0065     <span class="keyword">end</span>
-0066     
-0067     <span class="keyword">for</span> iU = Sys.plot_u
-0068         set(Sys.h.Upast(iU), <span class="string">'Xdata'</span>, Sys.system_data.time(1:end-1),<span class="string">'Ydata'</span>,  Sys.system_data.U(iU,:));
-0069         set(Sys.h.Umodel(iU), <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1),<span class="string">'Ydata'</span>, Sys.model_data.U(iU,:));
-0070     <span class="keyword">end</span>
-0071     
-0072     <span class="keyword">for</span> iW = Sys.plot_w
-0073         set(Sys.h.Wpast(iW), <span class="string">'Xdata'</span>, Sys.system_data.time,<span class="string">'Ydata'</span>,  Sys.system_data.W(iW,:));
-0074         set(Sys.h.Wmodel(iW), <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1),<span class="string">'Ydata'</span>, Sys.model_data.W(iW,1:end-1));
-0075     <span class="keyword">end</span>
-0076     
-0077 <span class="keyword">end</span>
-0078 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+0066 <span class="keyword">else</span>
+0067     
+0068     <span class="keyword">for</span> iX = Sys.plot_x
+0069         set(Sys.h.Xpast(iX), <span class="string">'Xdata'</span>, Sys.system_data.time, <span class="string">'Ydata'</span>,Sys.system_data.X(iX,1:end-1));
+0070         set(Sys.h.Xmodel(iX), <span class="string">'Xdata'</span>, Sys.model_data.time,<span class="string">'Ydata'</span>, Sys.model_data.X(iX,:));
+0071     <span class="keyword">end</span>
+0072     
+0073     <span class="keyword">for</span> iY = Sys.plot_y
+0074         set(Sys.h.Ypast(iY), <span class="string">'Xdata'</span>, Sys.system_data.time,<span class="string">'Ydata'</span>,  Sys.system_data.Y(iY,:));
+0075         set(Sys.h.Ymodel(iY), <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1),<span class="string">'Ydata'</span>, Sys.model_data.Y(iY,:));
+0076     <span class="keyword">end</span>
+0077     
+0078     <span class="keyword">for</span> iU = Sys.plot_u
+0079         set(Sys.h.Upast(iU), <span class="string">'Xdata'</span>, Sys.system_data.time,<span class="string">'Ydata'</span>,  Sys.system_data.U(iU,:));
+0080         set(Sys.h.Umodel(iU), <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1),<span class="string">'Ydata'</span>, Sys.model_data.U(iU,:));
+0081     <span class="keyword">end</span>
+0082     
+0083     <span class="keyword">for</span> iW = Sys.plot_w
+0084         set(Sys.h.Wpast(iW), <span class="string">'Xdata'</span>, Sys.system_data.time,<span class="string">'Ydata'</span>,  Sys.system_data.W(iW,:));
+0085         set(Sys.h.Wmodel(iW), <span class="string">'Xdata'</span>, Sys.model_data.time(1:end-1),<span class="string">'Ydata'</span>, Sys.model_data.W(iW,1:end-1));
+0086     <span class="keyword">end</span>
+0087     xlabel(<span class="string">'Time'</span>);
+0088 <span class="keyword">end</span>
+0089 <span class="keyword">end</span></pre></div>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

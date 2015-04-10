@@ -41,7 +41,7 @@ This function is called by:
 
 <h2><a name="_subfunctions"></a>SUBFUNCTIONS <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <ul style="list-style-image:url(../../matlabicon.gif)">
-<li><a href="#_sub1" class="code">function SC = simple_cars()</a></li><li><a href="#_sub2" class="code">function obj = get_objective(Sys, X, Y, U)</a></li></ul>
+<li><a href="#_sub1" class="code">function SC = simple_cars()</a></li><li><a href="#_sub2" class="code">function obj = get_objective(Sys, X, Y, U, W, rho, wr)</a></li></ul>
 
 <h2><a name="_source"></a>SOURCE CODE <a href="#_top"><img alt="^" border="0" src="../../up.png"></a></h2>
 <div class="fragment"><pre>0001 classdef <a href="simple_cars.html" class="code" title="">simple_cars</a> &lt; <a href="../../src/STLC_lti.html" class="code" title="">STLC_lti</a>
@@ -71,7 +71,7 @@ This function is called by:
 0025             
 0026         <span class="keyword">end</span>
 0027         
-0028         <a name="_sub1" href="#_subfunctions" class="code">function obj = get_objective(Sys, X, Y, U)</a>
+0028         <a name="_sub1" href="#_subfunctions" class="code">function obj = get_objective(Sys, X, Y, U, W, rho, wr)</a>
 0029             
 0030             obj = norm(X(2,1)-1,1);
 0031             <span class="keyword">for</span> k=2:2*Sys.L
@@ -85,6 +85,6 @@ This function is called by:
 0039     
 0040     
 0041 <span class="keyword">end</span></pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>

@@ -112,7 +112,7 @@ This function is called by:
 0056 Pphi=sdpvar(1,1);
 0057 <span class="keyword">for</span> i = 1:numel(stl_list)
 0058     phi = <a href="STLformula.html" class="code" title="">STLformula</a>(<span class="string">'phi'</span>, stl_list{i});
-0059     [Fphi, Pphi] = <a href="STL2MILP_robust.html" class="code" title="function [F,P] = STL2MILP_robust(phi,k,ts,var,M)">STL2MILP_robust</a>(phi,1, 2*L, ts, var, M);
+0059     [Fphi, Pphi] = <a href="STL2MILP_robust.html" class="code" title="function [F,P] = STL2MILP_robust(phi,k,ts,var,M)">STL2MILP_robust</a>(phi, 2*L, ts, var, M);
 0060     Fstl = [Fstl Fphi];
 0061 <span class="keyword">end</span>
 0062 
@@ -159,6 +159,6 @@ This function is called by:
 0103 adv_params= {done, p, Xdone, U, Wref};
 0104 adv_output= {W, X, Pphi};
 0105 adversary = optimizer([Fdyn Fw Fstl],obj,options,adv_params, adv_output );</pre></div>
-<hr><address>Generated on Tue 10-Mar-2015 19:17:03 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
+<hr><address>Generated on Thu 09-Apr-2015 23:08:26 by <strong><a href="http://www.artefact.tk/software/matlab/m2html/" title="Matlab Documentation in HTML">m2html</a></strong> &copy; 2005</address>
 </body>
 </html>
