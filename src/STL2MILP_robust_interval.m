@@ -1,4 +1,4 @@
-function [F,Plow,Pup] = STL2MILP_robust_interval(phi,k,ts,var,M)
+function [F,Plow,Pup] = STL2MILP_robust_interval(phi,kList,kMax,ts,var,M)
 % STL2MILP_robust_interval  constructs MILP constraints in YALMIP that compute
 %                           the robust interval of satisfaction, i.e. the 
 %                           lower and upper bounds on the robustness of 
@@ -43,37 +43,42 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,k,ts,var,M)
     a = max([0 floor(a/ts)-1]); 
     b = ceil(b/ts)-1; 
     
+    if b==Inf
+        b = kMax;
+    end
+    
+    
     switch (phi.type)
         
         case 'predicate'
-            [F,Plow,Pup] = pred(phi.st,k,var,M);
+            [F,Plow,Pup] = pred(phi.st,kList,kMax,var,M);
                      
         case 'not'
-            [Frest,Prest_low,Prest_up] = STL2MILP_robust_interval(phi.phi,k,ts, var,M);
+            [Frest,Prest_low,Prest_up] = STL2MILP_robust_interval(phi.phi,kList,kMax,ts, var,M);
             [Fnot, Pnot_low,Pnot_up] = not(Prest_low,Prest_up);
             F = [F, Fnot, Frest];
             Plow = Pnot_low;
             Pup = Pnot_up;
 
         case 'or'
-            [Fdis1,Pdis1_low,Pdis1_up] = STL2MILP_robust_interval(phi.phi1,k,ts, var,M);
-            [Fdis2,Pdis2_low,Pdis2_up] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
+            [Fdis1,Pdis1_low,Pdis1_up] = STL2MILP_robust_interval(phi.phi1,kList,kMax,ts, var,M);
+            [Fdis2,Pdis2_low,Pdis2_up] = STL2MILP_robust_interval(phi.phi2,kList,kMax,ts, var,M);
             [For, Por_low,Por_up] = or([Pdis1_low;Pdis2_low],[Pdis1_up;Pdis2_up],M);
             F = [F, For, Fdis1, Fdis2];
             Plow = Por_low;
             Pup = Por_up;
 
         case 'and'
-            [Fcon1,Pcon11,Pcon12] = STL2MILP_robust_interval(phi.phi1,k,ts, var,M);
-            [Fcon2,Pcon21,Pcon22] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
+            [Fcon1,Pcon11,Pcon12] = STL2MILP_robust_interval(phi.phi1,kList,kMax,ts, var,M);
+            [Fcon2,Pcon21,Pcon22] = STL2MILP_robust_interval(phi.phi2,kList,kMax,ts, var,M);
             [Fand,Pand1,Pand2] = and([Pcon11;Pcon21],[Pcon12;Pcon22],M);
             F = [F, Fand, Fcon1, Fcon2];
             Plow = Pand1;
             Pup = Pand2;
 
         case '=>'
-            [Fant,Pant1,Pant2] = STL2MILP_robust_interval(phi.phi1,k, ts,var,M);
-            [Fcons,Pcons1,Pcons2] = STL2MILP_robust_interval(phi.phi2,k,ts, var,M);
+            [Fant,Pant1,Pant2] = STL2MILP_robust_interval(phi.phi1,kList,kMax,ts,var,M);
+            [Fcons,Pcons1,Pcons2] = STL2MILP_robust_interval(phi.phi2,kList,kMax,ts,var,M);
             [Fnotant,Pnotant1,Pnotant2] = not(Pant1,Pant2);
             [Fimp,PimPlow,PimPup] = or([Pnotant1;Pcons1],[Pnotant2;Pcons2],M);
             F = [F, Fant, Fnotant, Fcons, Fimp];
@@ -81,32 +86,34 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,k,ts,var,M)
             Pup = PimPup;
             
         case 'always'
-            [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,k, ts, var,M);
-            [Falw,Palw1,Palw2] = always(Prest1,Prest2,a,b,k,M);
+            kListAlw = unique(cell2mat(arrayfun(@(k) {k + a: k + b}, kList)));
+            [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,kListAlw,kMax,ts,var,M);
+            [Falw,Palw1,Palw2] = always(Prest1,Prest2,a,b,kList,kMax,M);
             F = [F, Falw];
             F = [F, Frest];
             Plow = Palw1;
             Pup = Palw2;
 
         case 'eventually'
-            [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,k, ts, var,M);
-            [Fev,Pev1,Pev2] = eventually(Prest1,Prest2,a,b,k,M);
+            kListEv = unique(cell2mat(arrayfun(@(k) {k + a: k + b}, kList)));
+            [Frest,Prest1,Prest2] = STL2MILP_robust_interval(phi.phi,kListEv,kMax,ts,var,M);
+            [Fev,Pev1,Pev2] = eventually(Prest1,Prest2,a,b,kList,kMax,M);
             F = [F, Fev];
             F = [F, Frest];
             Plow = Pev1;
             Pup = Pev2;
           
         case 'until'
-            [Fp,PPlow,PPup] = STL2MILP_robust_interval(phi.phi1,k, ts, var,M);
-            [Fq,Pq1,Pq2] = STL2MILP_robust_interval(phi.phi2,k, ts, var,M);
-            [Funtil,Puntil1,Puntil2] = until(PPlow,PPup,Pq1,Pq2,a,b,k,M);
+            [Fp,PPlow,PPup] = STL2MILP_robust_interval(phi.phi1,kList,kMax,ts,var,M);
+            [Fq,Pq1,Pq2] = STL2MILP_robust_interval(phi.phi2,kList,kMax,ts,var,M);
+            [Funtil,Puntil1,Puntil2] = until(PPlow,PPup,Pq1,Pq2,a,b,kList,kMax,M);
             F = [F,Funtil,Fp,Fq];
             Plow = Puntil1;
             Pup = Puntil2;
     end   
 end
 
-function [F,z1,z2] = pred(st,k,var,M)
+function [F,z1,z2] = pred(st,kList,kMax,var,M)
     % Enforce constraints based on predicates 
     % 
     % var is the variable dictionary    
@@ -132,9 +139,11 @@ function [F,z1,z2] = pred(st,k,var,M)
     F = [];
     zAll = [];
     
+    k = size(kList,2);
+    
     for l=1:k
         t_st = st;
-        t_st = regexprep(t_st,'t\)',[num2str(l) '\)']);
+        t_st = regexprep(t_st,'t\)',[num2str(kList(l)) '\)']);
         try 
             z = eval(t_st);
         end
@@ -179,14 +188,18 @@ end
 
 % TEMPORAL OPERATIONS
 
-function [F,P_alwlow,P_alwup] = always(Plow,Pup,a,b, k,M)
+function [F,P_alwlow,P_alwup] = always(Plow,Pup,a,b,kList,kMax,M)
     F = [];
+    k = size(kList,2);
     P_alwlow = sdpvar(1,k);
     P_alwup = sdpvar(1,k);
+    kListAlw = unique(cell2mat(arrayfun(@(k) {k + a : k + b}, kList)));
     
     for i = 1:k
-        [ia, ib, over] = getIndices(i,a,b,k);
-        [F0,P0low,P0up] = and(Plow(ia:ib)',Pup(ia:ib)',M);
+        [ia, ib, over] = getIndices(kList(i),a,b,kMax);
+        ia_real = find(kListAlw==ia);
+        ib_real = find(kListAlw==ib);
+        [F0,P0low,P0up] = and(Plow(ia_real:ib_real)',Pup(ia_real:ib_real)',M);
         if over
             F0 = [F0, P_alwlow(i) == -M*.9];
         else
@@ -203,14 +216,18 @@ function [F,P_alwlow,P_alwup] = always(Plow,Pup,a,b, k,M)
 end
 
 
-function [F,P_evlow,P_evup] = eventually(Plow,Pup,a,b, k,M)
+function [F,P_evlow,P_evup] = eventually(Plow,Pup,a,b,kList,kMax,M)
     F = [];
+    k = size(kList,2);
     P_evlow = sdpvar(1,k);
     P_evup = sdpvar(1,k);
+    kListEv = unique(cell2mat(arrayfun(@(k) {k + a : k + b}, kList)));
     
     for i = 1:k
-        [ia, ib, over] = getIndices(i,a,b,k);
-        [F0,P0low,P0up] = or(Plow(ia:ib)',Pup(ia:ib)',M);
+        [ia, ib, over] = getIndices(kList(i),a,b,kMax);
+        ia_real = find(kListEv==ia);
+        ib_real = find(kListEv==ib);
+        [F0,P0low,P0up] = or(Plow(ia_real:ib_real)',Pup(ia_real:ib_real)',M);
         if over >=1
             F0 = [F0, P_evup(i) == M*.9];
         else

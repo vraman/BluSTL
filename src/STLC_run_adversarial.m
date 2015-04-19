@@ -112,6 +112,9 @@ i_past =  i_past+1;
 update_hist_data();
 Sys = update_plot(Sys);
 
+% FOR MOVIE: Uncomment to record a movie
+% mov = [getframe(Sys.h.hf)];
+
 %% loop
 pause
 i_transient = i_transient+1;
@@ -140,14 +143,29 @@ while (time_d(end)+ts< time(end))
     update_hist_data();
     Sys= update_plot(Sys);
     
+    % FOR MOVIE
+    % mov = [mov getframe(Sys.h.hf)];
+    
     if i_transient < L
         i_transient = i_transient+1;
     end
     drawnow;
     %  pause;
     if StopRequest
+        % FOR MOVIE: 
+        % movfile = VideoWriter('rhc_hvac.mp4','MPEG-4')
+        % movfile.FrameRate=2.5;
+        % open(movfile)
+        % writeVideo(movfile,mov)
+        % close(movfile);
         break;
     end
+    % FOR MOVIE: 
+    % movfile = VideoWriter('rhc_hvac.mp4','MPEG-4')
+    % movfile.FrameRate=2.5;
+    % open(movfile)
+    % writeVideo(movfile,mov)
+    % close(movfile);
 end
 
     function compute_input()

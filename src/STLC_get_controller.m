@@ -67,7 +67,7 @@ for i = 1:numel(stl_list)
             [Fphi, Pphi] = STL2MILP_robust(phi, 2*L, ts, var,M);
             Pstl = [Pstl; Pphi];
         case 'interval'
-            [Fphi, Pphilow, Pphiup] = STL2MILP_robust_interval(phi, 2*L, ts, var,M); 
+            [Fphi, Pphilow, Pphiup] = STL2MILP_robust_interval(phi, [1:L], 2*L, ts, var,M); 
             Pstllow = [Pstllow; Pphilow];
             Pstlup = [Pstlup; Pphiup];
     end
@@ -170,7 +170,7 @@ switch enc
     case 'robust'
         obj = get_objective(Sys,X,Y,U,W, Pstl(:,L), Sys.lambda_rho);
     case 'interval'
-        obj = get_objective(Sys,X,Y,U,W, Pstllow(:,L), Sys.lambda_rho);
+        obj = get_objective(Sys,X,Y,U,W, Pstllow(:,end), Sys.lambda_rho);
         output_controller =  {U,X,[Pstllow;Pstlup]};
 end
 
