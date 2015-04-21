@@ -133,9 +133,9 @@ end
 % %fGoal={};
 
 
-fPoly = {};
-fSafe = {};
-fGoal={};
+%fPoly = {};
+%fSafe = {};
+%fGoal={};
 
 
 %% STL formula

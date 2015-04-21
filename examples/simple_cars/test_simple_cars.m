@@ -42,6 +42,9 @@ SC.stl_list = {'alw_[0, Inf] ( (abs( x1(t) - x3(t) ) < 2) => alw_[0, 2] ( abs(x2
 %% Running stuff
 fprintf('Computing controller...\n');
 controller = get_controller(SC);
+SC = run_deterministic(SC, controller, adversary)
+return;
+
 fprintf('Computing adversary...\n');
 adversary = get_adversary(SC) 
 fprintf('Running...')

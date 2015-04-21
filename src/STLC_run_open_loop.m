@@ -73,21 +73,7 @@ params = {};
 % call solver
 
 %% Init system and model data
-Sys.system_data=struct;
-Sys.model_data=struct;
-
-
-Sys.system_data.time = [];
-Sys.system_data.U = [];
-Sys.system_data.X = x0;
-Sys.system_data.Y = [];
-Sys.system_data.W = []; 
-
-Sys.model_data.time = time_d;
-Sys.model_data.X = repmat(0*time_d(1:end), [nx 1]);
-Sys.model_data.Y = repmat(0*time_d(1:end-1), [ny 1]);
-Sys.model_data.U = repmat(0*time_d(1:end-1), [nu 1]);
-Sys.model_data.W = Wn;
+Sys= Sys.reset_data();
 
 time_new = 0;
 compute_input();
@@ -103,7 +89,7 @@ k=1;
 while (k < 2*L-1)
 
     k = k+1;
-    x0 = x_new;
+    x0 = x_new(:,end);
     time_new = time_new+ts;
     u_new = Upred(:,k);
     w_new = Wn(:,k);
@@ -133,13 +119,12 @@ end
 
     function update_hist_data()
         
-        Sys.system_data.time(end+1) = time_new;
-        Sys.system_data.U(:,end+1) = u_new;
-        Sys.system_data.X(:,end+1) = x_new;
-        Sys.system_data.Y(:,end+1) = y_new;
-        Sys.system_data.W(:,end+1) = w_new;
+        Sys.system_data.time = [Sys.system_data.time time_new];
+        Sys.system_data.U = [Sys.system_data.U u_new];
+        Sys.system_data.X = [Sys.system_data.X x_new];
+        Sys.system_data.Y = [Sys.system_data.Y y_new];
+        Sys.system_data.W = [Sys.system_data.W w_new];
     
-        
         Sys.model_data.time = time_d;
         Sys.model_data.X = double(Xpred);
         Sys.model_data.Y = [Sys.sysd.C*double(Xpred(:,1:end-1)) + Sys.sysd.D*[double(Upred); double(Wn(:,1:end-1))]];       

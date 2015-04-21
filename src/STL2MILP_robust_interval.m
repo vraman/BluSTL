@@ -21,7 +21,6 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,kList,kMax,ts,var,M)
 % :copyright: TBD
 % :license: TBD
 
-% NOT IN WORKING CONDITION
 
     if (nargin==4);
         M = 1000;
@@ -124,13 +123,13 @@ function [F,z1,z2] = pred(st,kList,kMax,var,M)
         eval([ fnames{ifield} '= var.' fnames{ifield} ';']); 
     end          
         
-    
     st = regexprep(st,'\[t\]','\(t\)'); % Breach compatibility ?
     if findstr('<', st)
         st = regexprep(st,'<','<= ');
         st = regexprep(st,'<= ',' +');
         st = ['-',st];           
     end
+    
     if findstr('>', st)
         st = regexprep(st,'>','>= ');
         st = regexprep(st,'>= ','-');
@@ -152,14 +151,14 @@ function [F,z1,z2] = pred(st,kList,kMax,var,M)
     
     % take the and over all dimension for multi-dimensional signals
     % this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
-    z = sdpvar(1,k);
-    for i=1:min(k,size(zAll,2))
-       [Fnew, z(:,i)] = and(zAll(:,i),zAll(:,i),M);
-       F = [F, Fnew];
-    end
+    %z = sdpvar(1,k);
+    %for i=1:min(k,size(zAll,2))
+    %   [Fnew, z(:,i)] = and(zAll(:,i),zAll(:,i),M);
+    %   F = [F, Fnew];
+    %end
     
-    z1 = z;
-    z2 = z;
+    z1 = zAll;
+    z2 = zAll;
   
 end
 
@@ -178,7 +177,6 @@ end
 function [F,Plow,Pup] = not(p_list1,p_list2)
     k = size(p_list1,2);
     m = size(p_list1,1);
-%    assert( m == 1 )
     Plow = sdpvar(m,k);
     Pup = sdpvar(m,k);
     F = [Plow == -p_list2, Pup == -p_list1];

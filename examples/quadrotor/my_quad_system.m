@@ -103,13 +103,15 @@ classdef quad_system <STLC_lti
             
             %% STL formula
             
-    
+             bounds = '(x(t)<10 and x(t)>0 and y(t)>0 and y(t)<10 and z(t)<10 and z(t)>0'
+             
+             
              QS.stl_list = {'alw (x(t)<10 and x(t)>0)','alw (y(t)<10 and y(t)>0)','alw (z(t)<10 and z(t)>0)'};
              
-%             QS.stl_list{end+1} = 'alw ((x(t) < 1)  => (ev_[0, 5] (x(t) > 5)))';
-%             QS.stl_list{end+1} = 'alw ((x(t) > 5)  => (ev_[0, 5] (x(t) < 1)))';
-%             QS.stl_list{end+1} = 'alw ((y(t) < 1)  => (ev_[0, 5] (y(t) > 5)))';
-%             QS.stl_list{end+1} = 'alw ((y(t) > 5)  => (ev_[0, 5] (y(t) < 1)))';
+%            QS.stl_list{end+1} = 'alw ((x(t) < 1)  => (ev_[0, 5] (x(t) > 5)))';
+%            QS.stl_list{end+1} = 'alw ((x(t) > 5)  => (ev_[0, 5] (x(t) < 1)))';
+%            QS.stl_list{end+1} = 'alw ((y(t) < 1)  => (ev_[0, 5] (y(t) > 5)))';
+%            QS.stl_list{end+1} = 'alw ((y(t) > 5)  => (ev_[0, 5] (y(t) < 1)))';
 
              
 %             QS.stl_list{end+1} = 'alw ((obs1(t)<0) or ((x(t)<2) or (y(t)<2)))';

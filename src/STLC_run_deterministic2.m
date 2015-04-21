@@ -201,8 +201,9 @@ end
             pn(1:L) = rob*ones(1,L);
             donen(1:L-1) = 1;
             Un(:,1:L-1) = Sys.system_data.U(:,end-L+2:end);     %    previously computed inputs
-            Xn(:,1:L) =   Sys.system_data.X(:,end-L+1:end);    
+            Xn(:,1:L) =   Sys.system_data.X(:,end-L+1:end);     %    previously computed temperatures
         end
+        
         Wn = sensing(Sys);
         
     end
@@ -215,7 +216,7 @@ end
         w_new = interp1(time, Sys.Wref', sys_time);
         u_new = repmat(u_new,1, size(w_new,2));
         [x_new, y_new] = system_sim(Sys,u_new, w_new, sys_time,x0);
-       
+        
         
     end
 

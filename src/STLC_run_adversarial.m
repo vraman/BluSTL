@@ -55,8 +55,11 @@ ntime = zeros(1, nb_stages*numel(time));
 for istage = 0:nb_stages-1
     ntime(istage*numel(time)+1:(istage+1)*numel(time))= time+istage*(time(end)+time(2)) ;
 end
+Sys.time = ntime;
 time = ntime;
-Wref = repmat(Wref,1,Sys.nb_stages);
+Sys.Wref = repmat(Wref,1,Sys.nb_stages);
+Wref = Sys.Wref;
+Sys.nb_stages=1; 
 
 
 %% Initialize discrete data for the controller and environment

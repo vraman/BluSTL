@@ -1,10 +1,8 @@
 function [ Wn ] = STLC_sensing( Sys )
-%% Make data nb_stages times longer
-
 
 nw = Sys.nw;
 time = Sys.time;
-time_d = Sys.time_d;
+time_d = Sys.model_data.time;
 Wref = Sys.Wref;
 
 for iwx=1:nw

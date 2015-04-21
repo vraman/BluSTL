@@ -23,7 +23,6 @@ classdef STLC_lti
         ts         % sampling time
         L          % horizon
         time
-        time_d
         nb_stages
         var
         stl_list
@@ -34,7 +33,7 @@ classdef STLC_lti
         solver_options
         model_data
         controller    % YALMIP parametric problem for the adversary
-
+        
     end
     
     % adversary properties
@@ -46,7 +45,7 @@ classdef STLC_lti
         max_react_iter % maximum number of iterations
         adversary    % YALMIP parametric problem for the adversary
     end
-        
+    
     % plotting properties
     properties
         h
@@ -62,8 +61,8 @@ classdef STLC_lti
     
     % misc
     properties
-       stop_button 
-       verbosity 
+        stop_button
+        verbosity
     end
     
     methods
@@ -155,8 +154,8 @@ classdef STLC_lti
             Sys.nw = size(Bw,2);
             Sys.ny = size(C,1);
             Sys.x0 = zeros(Sys.nx,1);
-             
-           
+            
+            
             % default label names
             Sys.xlabel = cell(1,nx);
             for iX = 1:Sys.nx
@@ -197,25 +196,39 @@ classdef STLC_lti
             
         end
         
-        % TODO continuous-time for system step, interface to other (NL,
-        % Simulink, external) dynamics)
+        % System step, using the discrete-time simulation
         function [x1, y0] = system_step(Sys, x0, u0, w0)
             x1 = Sys.sysd.A*x0+ Sys.sysd.B*[u0; w0];
             y0 = Sys.sysd.C*x0+ Sys.sysd.D*[u0; w0];
         end
-               
-        % default objective function r is the robust sat. and wr a weight 
+        
+        % continuous-time simulation,
+        function [x1, y0] = system_sim(Sys, u, w, time, x0)
+            % assumes that time is a chunck the same size as w, and u is scalar
+            U = [u ; w];
+            [Y,T,X] = lsim(Sys.sys, U', time, x0);
+            x1 = X';
+            y0 = Y';
+        end
+        
+        % Applies input for one discrete step, updates the model data
+        % requires that compute_input was called before
+        function Sys = apply_input(Sys)
+            Sys = STLC_apply_input(Sys);
+        end
+        
+        % default objective function r is the robust sat. and wr a weight
         function obj = get_objective(Sys, X, Y, U,W, rho,wr)
             switch nargin
                 case {4,5}
                     obj = sum(sum(abs(U))); % minimize U
                 case 6
-                    obj = sum(sum(abs(U)))-sum(rho); % minimize U penalized by r 
+                    obj = sum(sum(abs(U)))-sum(rho); % minimize U penalized by r
                 case 7
                     obj = sum(sum(abs(U)))-wr*sum(rho);
             end
         end
-      
+        
         function controller = get_controller(Sys,enc)
             if nargin < 2
                 enc = 'robust';
@@ -229,16 +242,54 @@ classdef STLC_lti
             adversary = STLC_get_adversary(Sys);
         end
         
+        % reset system and model data
+        function Sys = reset_data(Sys)
+            Sys.sysd = c2d(Sys.sys, Sys.ts);
+            Sys.system_data=struct;
+            Sys.model_data=struct;
+            
+            Sys.system_data.time = [];
+            Sys.system_data.U = [];
+            Sys.system_data.X = Sys.x0;
+            Sys.system_data.Y = [];
+            Sys.system_data.W = [];
+            Sys.system_data.time_index = 1;
+            
+            Sys.model_data.time_index = 0;
+            Sys.model_data.time = [];
+            Sys.model_data.X = [];
+            Sys.model_data.Y = [];
+            Sys.model_data.U = [];
+            Sys.model_data.W = [];
+        end
+        
+        function Sys = compute_input(Sys, controller)
+            % computes the next input and update model data
+            Sys = STLC_compute_input(Sys, controller);
+        end
+        
+        
         % Executes the controller in open loop mode
         function [system_data, params, rob] = run_open_loop(Sys, controller)
             [system_data, params, rob] = STLC_run_open_loop(Sys, controller);
         end
         
         % Executes the controller in a receding horizon (MPC)
-        function [Sys, params] = run_deterministic(Sys, controller)
-            [Sys, params] = STLC_run_deterministic(Sys, controller);
+        function [Sys] = run_deterministic(Sys, controller)
+            Sys = Sys.reset_data();
+            rfprintf_reset();
+            current_time =0;
+            while (current_time < Sys.time(end)-Sys.L*Sys.ts)
+                out = sprintf('time:%g', current_time );
+                rfprintf(out);
+                Sys = Sys.compute_input(controller);
+                Sys = Sys.apply_input();
+                Sys = Sys.update_plot();
+                drawnow;
+                current_time= Sys.system_data.time(end);
+            end
+            
         end
-        
         % Executes controller and adversary in open loop
         function [Sys, params] = run_open_loop_adv(Sys, controller, adversary)
             [Sys, params] = STLC_run_open_loop_adv(Sys, controller, adversary);
@@ -255,7 +306,7 @@ classdef STLC_lti
         end
         
         function Wn = sensing(HR)
-                Wn = STLC_sensing(HR);
+            Wn = STLC_sensing(HR);
         end
     end
 end

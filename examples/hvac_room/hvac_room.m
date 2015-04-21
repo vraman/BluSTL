@@ -41,7 +41,7 @@ classdef hvac_room <STLC_lti
             
             %% Controller Initialisation
             % Time
-            HR.time = 0:1:1439; % time for the dynamics
+            HR.time = 0:10:1439; % time for the dynamics
             HR.ts=30; % sampling time for controller
             HR.L=L;  % horizon (# of steps)
             HR.nb_stages=3; % repeats time
@@ -57,7 +57,7 @@ classdef hvac_room <STLC_lti
             HR.u_delta=Inf;
             
             % Disturbance signal
-            HR.Wref = Wref;
+            HR.Wref = Wref(:,HR.time+1);
             meanw = mean(Wref(1:5,:)');
             
             epsi = epsi*meanw/100; % 10% possible deviation from Wref
@@ -81,15 +81,15 @@ classdef hvac_room <STLC_lti
             
             %% Running stuff
             fprintf('Computing controller...\n');
-            
             tic
             HR.controller = get_controller(HR);
             toc
-            
+            if ~HR.det
             fprintf('Computing adversary...\n');
             tic
             HR.adversary = get_adversary(HR);
             toc
+            end
             
         end
         
@@ -107,10 +107,8 @@ if isempty(Sys.h)
     
     time = Sys.time;
     Wref = Sys.Wref;
-    nb_stages=Sys.nb_stages;
-    one_stage = numel(time)/nb_stages;
     
-    XLim = [0 Sys.time(one_stage)/60];
+    XLim = [0 Sys.time(end)/60];
     Sys.h.hf = figure;
     
     % Temperature
@@ -118,35 +116,35 @@ if isempty(Sys.h)
     hold on; grid on;
     
     % Troom
-    Sys.h.Tpast = plot(Sys.system_data.time/60, Sys.system_data.X(5,1:end-1), 'LineWidth',2);
+    Sys.h.Tpast = plot(Sys.system_data.time/60, Sys.system_data.X(5,:), 'LineWidth',2);
    
     % Tout
     Sys.h.Toutpast = plot(Sys.system_data.time/60, Sys.system_data.W(3,:), '-m', 'LineWidth',2);
     Sys.h.Tmodel = plot(Sys.model_data.time/60,Sys.model_data.X(5,:), '--g','LineWidth',2);
   
     % Comfort region
-    plot(time(1:30:one_stage)/60, Wref(6,1:30:one_stage), '-k','LineWidth',2)
+    plot(time(1:30:end)/60, Wref(6,1:30:end), '-k','LineWidth',2)
     legend('Room Temperature', 'Outside Temperature','Model prediction', 'Comfort Region')  
-    plot(time(1:30:one_stage)/60, 2*70-Wref(6,1:30:one_stage), '-k','LineWidth',2)
+    plot(time(1:30:end)/60, 2*70-Wref(6,1:30:end), '-k','LineWidth',2)
    
     if ~Sys.det
         % Tout bounds
-        plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage)+Sys.w_lb(3), '-m','LineWidth',1)
-        plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage), '--m','LineWidth',1);
-        plot(time(1:60:one_stage)/60, Wref(3,1:60:one_stage)+Sys.w_ub(3), '-m','LineWidth',1)
+        plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_lb(3), '-m','LineWidth',1)
+        plot(time(1:60:end)/60, Wref(3,1:60:end), '--m','LineWidth',1);
+        plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_ub(3), '-m','LineWidth',1)
     end
     
     %  xlabel('Time (hours)')
     ylabel('Temperatures (°F)');
-    set(gca, 'XLim',XLim , 'XTick', 0:3:nb_stages*24, 'FontSize', 14 );
+    set(gca, 'XLim',XLim , 'XTick', 0:3:time(end)/60, 'FontSize', 14 );
     
     % occupancy
     subplot(5,1,4);
     hold on;grid on;
-    stairs(time(1:one_stage)/60, Wref(7,1:one_stage), '-k', 'LineWidth',2);
+    stairs(time(1:end)/60, Wref(7,1:end), '-k', 'LineWidth',2);
     legend('Occupancy');
     % xlabel('Time (hours)')
-    set(gca, 'XLim', XLim, 'YLim', [-1.1 1.1], 'XTick', 0:3:nb_stages*24, ...
+    set(gca, 'XLim', XLim, 'YLim', [-1.1 1.1], 'XTick', 0:3:time(end)/60, ...
      'FontSize', 14, 'YTick', [-1 1], 'YTickLabel', {'empty' 'occupied'});
     
  
@@ -158,15 +156,12 @@ if isempty(Sys.h)
     ylabel('u');
     
     legend('Input Air Flow (ft^3/min)');
-    set(gca, 'XLim', XLim, 'XTick', 0:3:nb_stages*24, 'FontSize', 14);
+    set(gca, 'XLim', XLim, 'XTick', 0:3:time(end)/60, 'FontSize', 14);
     
 else
-    set(Sys.h.Tpast, 'Xdata', Sys.system_data.time/60, 'Ydata',Sys.system_data.X(5,1:end-1));
-    
+    set(Sys.h.Tpast, 'Xdata', Sys.system_data.time/60, 'Ydata',Sys.system_data.X(5,:));    
     set(Sys.h.Toutpast, 'Xdata', Sys.system_data.time(1:2:end)/60, 'Ydata',Sys.system_data.W(3,1:2:end));
-    
-    set(Sys.h.Tmodel, 'Xdata', Sys.model_data.time/60,'Ydata', Sys.model_data.X(5,:));
-    
+    set(Sys.h.Tmodel, 'Xdata', Sys.model_data.time/60,'Ydata', Sys.model_data.X(5,:));    
     set(Sys.h.Upast, 'Xdata', Sys.system_data.time/60,'Ydata',  Sys.system_data.U(1,:));
     set(Sys.h.Umodel, 'Xdata', Sys.model_data.time(1:end-1)/60,'Ydata', Sys.model_data.U(1,:));
     

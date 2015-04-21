@@ -15,7 +15,7 @@ classdef signal_generator < STLC_lti
         end
         
         function rob = monitor(SG,phi)
-             SG.bigM = 1000; 
+            SG.bigM = 1000;
             SG.h = [];
            SG.stl_list{1} = phi;
            SG.controller = get_controller(SG,'robust');
