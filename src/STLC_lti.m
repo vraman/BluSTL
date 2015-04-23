@@ -263,9 +263,10 @@ classdef STLC_lti
             Sys.model_data.W = [];
         end
         
-        function Sys = compute_input(Sys, controller)
+        function [Sys, status] = compute_input(Sys, controller)
             % computes the next input and update model data
-            Sys = STLC_compute_input(Sys, controller);
+            % status is 0 if everything is OK 
+            [Sys, status] = STLC_compute_input(Sys, controller);
         end
         
         

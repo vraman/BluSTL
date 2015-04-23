@@ -25,9 +25,12 @@ phis= { '(w1(t)>0) or (w2(t)>0)', ...
     '((w1(t)>0)) or (ev_[0,1.1] (w1(t)>0))',...    
     'alw_[0,5] (w1(t)>0 )',...
     'not (alw_[0,5] (w1(t)>0))',...
-    'alw_[0,1.1] alw_[0,1.1] (w1(t)>0)'}; 
+    'alw_[0,1.1] alw_[0,1.1] (w1(t)>0)',...
+    'alw( (x1(t)<1  =>  ev_[0, 6] (x1(t)>3)) and ((x1(t)>3)  =>  ev_[0, 6] (x1(t)<1)) )';
+    }; 
 
-for i = 1:6
+
+for i = 7
     phi = phis{i};
     
     tic;
@@ -37,4 +40,5 @@ for i = 1:6
     tic;
     rob_int = monitor_interval(SG, phi)
     toc;
+
 end

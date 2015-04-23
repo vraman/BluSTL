@@ -1,4 +1,4 @@
-function Sys = STLC_compute_input(Sys, controller)
+function [Sys, status] = STLC_compute_input(Sys, controller)
 % STLC_compute_input
 %
 % Input:
@@ -68,7 +68,10 @@ if (Sys.model_data.time_index<t_model)
     else
         disp(['Yalmip error: ' yalmiperror(errorflag1)]); % some other error
     end
-       
+    status = errorflag1;
+
+else
+    status=0;
 end
 
 

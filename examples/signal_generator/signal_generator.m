@@ -25,8 +25,7 @@ classdef signal_generator < STLC_lti
            hold on;
            plot(SG.model_data.time, SG.model_data.W(:,1:end))
            plot(SG.model_data.time, rob, 'k', 'LineWidth',2);
-         
-           
+        
         end
 
         function rob = monitor_interval(SG,phi)

@@ -7,7 +7,6 @@ w_new = [Sys.Wref(:,it) Sys.Wref(:,it+1)];
 u_new = interp1(Sys.model_data.time(1:end-1),Sys.model_data.U', sys_time', 'previous' )';
 U = [u_new ; w_new];
 x0 = Sys.system_data.X(:,it);
-
 [Y,T,X] = lsim(Sys.sys, U',sys_time-sys_time(1),x0);
 
 Sys.system_data.X(:,it:it+1)= X';
