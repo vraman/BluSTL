@@ -261,6 +261,7 @@ classdef STLC_lti
             Sys.model_data.Y = [];
             Sys.model_data.U = [];
             Sys.model_data.W = [];
+       
         end
         
         function [Sys, status] = compute_input(Sys, controller)
@@ -271,9 +272,23 @@ classdef STLC_lti
         
         
         % Executes the controller in open loop mode
-        function [system_data, params, rob] = run_open_loop(Sys, controller)
-            [system_data, params, rob] = STLC_run_open_loop(Sys, controller);
+        function [Sys] = run_open_loop(Sys, controller)
+            Sys = Sys.reset_data();
+            rfprintf_reset();
+            Sys = Sys.compute_input(controller);
+            current_time =0;
+            while (current_time < Sys.model_data.time(end)-Sys.ts)
+                out = sprintf('time:%g', current_time );
+                rfprintf(out);
+                Sys = Sys.apply_input();
+                Sys = Sys.update_plot();
+                drawnow;
+                current_time= Sys.system_data.time(end);
+            end
+            fprintf('\n');
+    
         end
+        
         
         % Executes the controller in a receding horizon (MPC)
         function [Sys] = run_deterministic(Sys, controller)
@@ -289,7 +304,7 @@ classdef STLC_lti
                 drawnow;
                 current_time= Sys.system_data.time(end);
             end
-            
+            fprintf('\n');
         end
         % Executes controller and adversary in open loop
         function [Sys, params] = run_open_loop_adv(Sys, controller, adversary)

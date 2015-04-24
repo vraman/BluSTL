@@ -4,6 +4,7 @@ it = Sys.system_data.time_index;
 sys_time = [Sys.time(it) Sys.time(it+1)];
 
 w_new = [Sys.Wref(:,it) Sys.Wref(:,it+1)];
+
 u_new = interp1(Sys.model_data.time(1:end-1),Sys.model_data.U', sys_time', 'previous' )';
 U = [u_new ; w_new];
 x0 = Sys.system_data.X(:,it);
