@@ -111,8 +111,8 @@ function [F,z] = pred(st,k,var,M)
         eval([ fnames{ifield} '= var.' fnames{ifield} ';']); 
     end          
         
-    st = regexprep(st,'\[t\]','\(t\)'); % Breach compatibility ?
-    if strfind( st, '<')
+    st = regexprep(st,'\[t\]','\(t\)'); % Breach compatibility
+    if strfind(st, '<')       
         tokens = regexp(st, '(.+)\s*<\s*(.+)','tokens');
         st = ['-(' tokens{1}{1} '- (' tokens{1}{2} '))']; 
     end
@@ -126,25 +126,20 @@ function [F,z] = pred(st,k,var,M)
     z = [];
     for l=1:k
         t_st = st;
-        t_st = regexprep(t_st,'t\)',[num2str(l) '\)']);
-        %zl = sdpvar(size(eval(t_st),1),size(eval(t_st),2)); % is that
-        % necessary ??
+        t_st = regexprep(t_st,'\<t\>',num2str(l));
         try 
             zl = eval(t_st);
         end
         z = [z,zl];
     end
     
-    % ALEX: I don't like/understand the following commented lines. 
-    %       it sure creates lots of constraints where none are needed.
-           
-    
+    % 
     % take the and over all dimension for multi-dimensional signals
-    %z = sdpvar(1,k);
-    %for i=1:k
+    % z = sdpvar(1,k);
+    % for i=1:k
     %    [Fnew, z(:,i)] = and(zAll(:,i),M);
     %    F = [F, Fnew];
-    %end
+    % end
 end
 
 % BOOLEAN OPERATIONS

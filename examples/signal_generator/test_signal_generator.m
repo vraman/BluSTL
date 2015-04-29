@@ -5,7 +5,7 @@ SG = signal_generator(nu,nw);
 
 %% Controller Initialisation
 % Time
-SG.time = 0:1:100; % time for the dynamics
+SG.time = 0:.1:100; % time for the dynamics
 SG.ts=1; % sampling time for controller
 SG.L=7;  % horizon (# of steps)
 SG.nb_stages=1; % repeats time
@@ -32,13 +32,17 @@ SG.stl_list{1} = 'alw ( y1(t)<1 => ev_[0, 10] (y1(t)>3)) and ((y1(t)>3)  =>  ev_
 SG.min_rob = 0.01;    
 SG.bigM = 1000;
 
+SG.plot_u = [1];
+SG.plot_y =[1];
+SG.plot_w = [1];
+
 %% Initial state
 
 %return;
 %% running stuff
 fprintf('Computing controller...');
 tic;
-SG.controller = get_controller(SG,'interval');
+SG.controller = get_controller(SG,'robust');
 toc;
 SG = SG.reset_data();
 

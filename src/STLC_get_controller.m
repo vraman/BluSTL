@@ -86,8 +86,7 @@ for i = 1:numel(stl_list)
         case 'interval'
             for j = 1:min(L, size(Pphilow,2))
                 Fstl = [Fstl Pphiup(:,j)>= p(j)]; % TODO this is specific to alw (phi), what about ev, until...
-            end
-        
+            end      
     end
 end
 
@@ -168,9 +167,9 @@ switch enc
     case 'boolean'
         obj = get_objective(Sys,X,Y,U,W);
     case 'robust'
-        obj = get_objective(Sys,X,Y,U,W, Pstl(:,L), Sys.lambda_rho);
+        obj = get_objective(Sys,X,Y,U,W, Pstl(:,1:L-1), Sys.lambda_rho);
     case 'interval'
-        obj = get_objective(Sys,X,Y,U,W, Pstllow(:,end), Sys.lambda_rho);
+        obj = get_objective(Sys,X,Y,U,W, Pstllow(:,1:L-1), Sys.lambda_rho);
         output_controller =  {U,X,[Pstllow;Pstlup]};
 end
 

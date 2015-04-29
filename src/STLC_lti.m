@@ -32,7 +32,7 @@ classdef STLC_lti
         bigM
         solver_options
         model_data
-        controller    % YALMIP parametric problem for the adversary
+        controller    % YALMIP parametric problem for the controller
         
     end
     
@@ -196,21 +196,19 @@ classdef STLC_lti
             
         end
         
-        % System step, using the discrete-time simulation
-        function [x1, y0] = system_step(Sys, x0, u0, w0)
-            x1 = Sys.sysd.A*x0+ Sys.sysd.B*[u0; w0];
-            y0 = Sys.sysd.C*x0+ Sys.sysd.D*[u0; w0];
+        % System step, using the continuous time simulation
+        function [Y,T,X] = system_step(Sys, u0, t, x0, w0)
+            U = [u0; w0];
+            [Y,T,X] = lsim(Sys.sys, U',t-t(1),x0);
         end
-        
-        % continuous-time simulation,
-        function [x1, y0] = system_sim(Sys, u, w, time, x0)
-            % assumes that time is a chunck the same size as w, and u is scalar
-            U = [u ; w];
-            [Y,T,X] = lsim(Sys.sys, U', time, x0);
-            x1 = X';
-            y0 = Y';
+         
+        % get disturbance - default reads Wref
+        function w = get_disturbance(Sys) 
+            it = Sys.system_data.time_index;
+            w = [Sys.Wref(:,it) Sys.Wref(:,it+1)];
+
         end
-        
+            
         % Applies input for one discrete step, updates the model data
         % requires that compute_input was called before
         function Sys = apply_input(Sys)
@@ -223,15 +221,19 @@ classdef STLC_lti
                 case {4,5}
                     obj = sum(sum(abs(U))); % minimize U
                 case 6
-                    obj = sum(sum(abs(U)))-sum(rho); % minimize U penalized by r
+                    obj = sum(sum(abs(U)))-sum(sum(rho)); % minimize U penalized by r
                 case 7
-                    obj = sum(sum(abs(U)))-wr*sum(rho);
+                    obj = sum(sum(abs(U)))-wr*sum(sum(rho));
             end
         end
         
         function controller = get_controller(Sys,enc)
             if nargin < 2
-                enc = 'robust';
+                if isempty(Sys.encoding)
+                    enc = 'robust';
+                else
+                    enc = Sys.encoding;
+                end
             end
             Sys.sysd = c2d(Sys.sys, Sys.ts);
             controller = STLC_get_controller(Sys,enc);
@@ -244,6 +246,21 @@ classdef STLC_lti
         
         % reset system and model data
         function Sys = reset_data(Sys)
+            
+            % implements nb_stages here
+            if Sys.nb_stages>1
+                fprintf('Updating time and Wref based on nb_stages=%d\n', Sys.nb_stages); % TODO unverbose/verbose that out
+                nb_stages_=Sys.nb_stages;
+                time_ = Sys.time;
+                ntime = zeros(1, nb_stages_*numel(time_));
+                for istage = 0:nb_stages_-1
+                    ntime(istage*numel(time_)+1:(istage+1)*numel(time_))= time_+istage*(time_(end)+time_(2)) ;
+                end
+                Sys.time = ntime;
+                Sys.Wref = repmat(Sys.Wref,1,Sys.nb_stages);
+                Sys.nb_stages=1;
+            end
+            
             Sys.sysd = c2d(Sys.sys, Sys.ts);
             Sys.system_data=struct;
             Sys.model_data=struct;
@@ -261,12 +278,12 @@ classdef STLC_lti
             Sys.model_data.Y = [];
             Sys.model_data.U = [];
             Sys.model_data.W = [];
-       
+            
         end
         
         function [Sys, status] = compute_input(Sys, controller)
             % computes the next input and update model data
-            % status is 0 if everything is OK 
+            % status is 0 if everything is OK
             [Sys, status] = STLC_compute_input(Sys, controller);
         end
         
@@ -285,8 +302,7 @@ classdef STLC_lti
                 drawnow;
                 current_time= Sys.system_data.time(end);
             end
-            fprintf('\n');
-    
+            fprintf('\n'); 
         end
         
         
@@ -306,6 +322,7 @@ classdef STLC_lti
             end
             fprintf('\n');
         end
+        
         % Executes controller and adversary in open loop
         function [Sys, params] = run_open_loop_adv(Sys, controller, adversary)
             [Sys, params] = STLC_run_open_loop_adv(Sys, controller, adversary);

@@ -34,7 +34,7 @@ Sys.x0= [1 ; 1];
 %% Defining the controller
 % We start by defining the time instants for the whole experiment, the discrete time
 % step ts for the controller and the horizon L in number of time steps.  
-Sys.time = 0:.1:10; 
+Sys.time = 0:.1:15; 
 Sys.ts=.2; % sampling time for controller
 Sys.L=10;  % horizon is 2s in that case
 
@@ -48,7 +48,7 @@ Sys.u_lb = -10; % lower bound on u
 % Then the following define a signal temporal logic formula to be satisfied
 % by the system. Note that times in the temporal operators are continuous,
 % not discrete steps. 
-Sys.stl_list = {'ev_[0,2] alw_[0,2] ( abs(y1(t)-w1(t)) < 0.1)'};
+Sys.stl_list = {'ev_[0,.8] alw_[0,2] ( abs(y1(t)-w1(t)) < 0.1)'};
 
 %%
 % Now we are ready to compile the controller for our problem. 

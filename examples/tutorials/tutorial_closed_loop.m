@@ -8,7 +8,7 @@ Sys.Wref(60:80) = -0.5;
 
 %%
 % and the specs:
-Sys.stl_list = {'alw (ev_[0,1.] alw_[0,0.5] ( abs(y1(t)-w1(t)) < 0.1))'};
+Sys.stl_list = {'alw (ev_[0,2.] alw_[0,1] ( abs(y1(t)-w1(t)) < 0.1))'};
 controller = get_controller(Sys);
 
 %%

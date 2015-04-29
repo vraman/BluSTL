@@ -123,18 +123,16 @@ function [F,z1,z2] = pred(st,kList,kMax,var,M)
         eval([ fnames{ifield} '= var.' fnames{ifield} ';']); 
     end          
         
-    st = regexprep(st,'\[t\]','\(t\)'); % Breach compatibility ?
-    if findstr('<', st)
-        st = regexprep(st,'<','<= ');
-        st = regexprep(st,'<= ',' +');
-        st = ['-',st];           
+    st = regexprep(st,'\[t\]','\(t\)'); % Breach compatibility 
+    if strfind(st, '<')
+        tokens = regexp(st, '(.+)\s*<\s*(.+)','tokens');
+        st = ['-(' tokens{1}{1} '- (' tokens{1}{2} '))']; 
+    end
+    if strfind(st, '>')
+        tokens = regexp(st, '(.+)\s*>\s*(.+)','tokens');
+        st= [ '(' tokens{1}{1} ')-(' tokens{1}{2} ')' ];
     end
     
-    if findstr('>', st)
-        st = regexprep(st,'>','>= ');
-        st = regexprep(st,'>= ','-');
-    end
-         
     F = [];
     zAll = [];
     
@@ -142,7 +140,7 @@ function [F,z1,z2] = pred(st,kList,kMax,var,M)
     
     for l=1:k
         t_st = st;
-        t_st = regexprep(t_st,'t\)',[num2str(kList(l)) '\)']);
+        t_st = regexprep(t_st,'\<t\>', num2str(kList(l)));
         try 
             z = eval(t_st);
         end

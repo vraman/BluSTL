@@ -1,4 +1,4 @@
-function [Sys, status] = STLC_compute_input(Sys, controller)
+function [Sys, status] = STLC_compute_input_adv(Sys, controller)
 % STLC_compute_input
 %
 % Input:

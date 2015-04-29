@@ -42,9 +42,9 @@ classdef hvac_room <STLC_lti
             %% Controller Initialisation
             % Time
             HR.time = 0:10:1439; % time for the dynamics
-            HR.ts=30; % sampling time for controller
+            HR.ts=20; % sampling time for controller
             HR.L=L;  % horizon (# of steps)
-            HR.nb_stages=3; % repeats time
+            HR.nb_stages=1; % repeats time
             
             HR.max_react_iter=100;
             HR.min_rob = .1;
@@ -123,9 +123,9 @@ if isempty(Sys.h)
     Sys.h.Tmodel = plot(Sys.model_data.time/60,Sys.model_data.X(5,:), '--g','LineWidth',2);
   
     % Comfort region
-    plot(time(1:30:end)/60, Wref(6,1:30:end), '-k','LineWidth',2)
+    plot(time/60, Wref(6,:), '-k','LineWidth',2)
     legend('Room Temperature', 'Outside Temperature','Model prediction', 'Comfort Region')  
-    plot(time(1:30:end)/60, 2*70-Wref(6,1:30:end), '-k','LineWidth',2)
+    plot(time/60, 2*70-Wref(6,:), '-k','LineWidth',2)
    
     if ~Sys.det
         % Tout bounds
