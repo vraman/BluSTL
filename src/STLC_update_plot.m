@@ -8,8 +8,8 @@ function Sys = STLC_update_plot(Sys)
 % :license: TBD
 
 system_style= {'LineWidth',2};
-model_style = {'--g'};
-axis_style = {'Fontsize',12}; 
+model_style = {'--', 'Color', [0. 0.5 0.],'LineWidth', 2};
+axis_style = {'Fontsize',12};
 
 try % try updating existing plots
     for iX = Sys.plot_x
@@ -32,7 +32,8 @@ try % try updating existing plots
         set(Sys.h.Wmodel(iW), 'Xdata', Sys.model_data.time(1:end-1),'Ydata', Sys.model_data.W(iW,1:end-1));
     end
     xlabel('Time');
-catch % didn't work (either first call, or figure was closed or some other error), then create new plot
+    
+catch % updading didn't work (either first call, or figure was closed or some other error), then create new plot
     Sys.h =[];
     Sys.h.hf = figure;
     nb_plots = numel(Sys.plot_x)+numel(Sys.plot_y)+numel(Sys.plot_u)+numel(Sys.plot_w);
@@ -41,8 +42,12 @@ catch % didn't work (either first call, or figure was closed or some other error
     for iX = Sys.plot_x
         subplot(nb_plots,1,cur_plot);
         hold on; grid on;
-        Sys.h.Xpast(iX) = plot(Sys.system_data.time, Sys.system_data.X(iX,1:end),system_style{:});
-        Sys.h.Xmodel(iX) = plot(Sys.model_data.time,Sys.model_data.X(iX,:), model_style{:});
+        if (~isempty(Sys.system_data.time))
+            Sys.h.Xpast(iX) = plot(Sys.system_data.time, Sys.system_data.X(iX,1:end),system_style{:});
+        end
+        if (~isempty(Sys.model_data.time))
+            Sys.h.Xmodel(iX) = stairs(Sys.model_data.time,Sys.model_data.X(iX,:), model_style{:});
+        end
         ylabel(Sys.xlabel{iX});
         cur_plot = cur_plot+1;
         set(gca,axis_style{:});
@@ -51,8 +56,13 @@ catch % didn't work (either first call, or figure was closed or some other error
     for iY = Sys.plot_y
         subplot(nb_plots,1,cur_plot);
         hold on;grid on;
-        Sys.h.Ypast(iY) = plot(Sys.system_data.time, Sys.system_data.Y(iY,:),system_style{:});
-        Sys.h.Ymodel(iY) = plot(Sys.model_data.time(1:end-1), Sys.model_data.Y(iY,:), model_style{:});
+        if (~isempty(Sys.system_data.time))
+            
+            Sys.h.Ypast(iY) = plot(Sys.system_data.time, Sys.system_data.Y(iY,:),system_style{:});
+        end
+        if (~isempty(Sys.model_data.time))
+            Sys.h.Ymodel(iY) = stairs(Sys.model_data.time(1:end-1), Sys.model_data.Y(iY,:), model_style{:});
+        end
         ylabel(Sys.ylabel{iY});
         cur_plot = cur_plot+1;
         set(gca,axis_style{:});
@@ -61,8 +71,12 @@ catch % didn't work (either first call, or figure was closed or some other error
     for iU = Sys.plot_u
         subplot(nb_plots,1,cur_plot);
         hold on;grid on;
-        Sys.h.Upast(iU) = stairs(Sys.system_data.time, Sys.system_data.U(iU,:),system_style{:});
-        Sys.h.Umodel(iU) = stairs(Sys.model_data.time(1:end-1),Sys.model_data.U(iU,:), model_style{:});
+        if (~isempty(Sys.system_data.time))
+            Sys.h.Upast(iU) = stairs(Sys.system_data.time, Sys.system_data.U(iU,:),system_style{:});
+        end
+        if (~isempty(Sys.model_data.time))
+            Sys.h.Umodel(iU) = stairs(Sys.model_data.time(1:end-1),Sys.model_data.U(iU,:), model_style{:});
+        end
         ylabel([Sys.ulabel{iU}]);
         cur_plot = cur_plot+1;
         set(gca,axis_style{:});
@@ -71,8 +85,13 @@ catch % didn't work (either first call, or figure was closed or some other error
     for iW = Sys.plot_w
         subplot(nb_plots,1,cur_plot);
         hold on;grid on;
-        Sys.h.Wpast(iW) = plot(Sys.system_data.time, Sys.system_data.W(iW,:),system_style{:});
-        Sys.h.Wmodel(iW) = plot(Sys.model_data.time(1:end-1),Sys.model_data.W(iW,1:end-1), model_style{:});
+        if (~isempty(Sys.system_data.time))
+            
+            Sys.h.Wpast(iW) = plot(Sys.system_data.time, Sys.system_data.W(iW,:),system_style{:});
+        end
+        if (~isempty(Sys.model_data.time))
+            Sys.h.Wmodel(iW) = stairs(Sys.model_data.time(1:end-1),Sys.model_data.W(iW,1:end-1), model_style{:});
+        end
         ylabel(Sys.wlabel{iW});
         cur_plot = cur_plot+1;
         set(gca,axis_style{:});
@@ -84,5 +103,5 @@ catch % didn't work (either first call, or figure was closed or some other error
             'callback','Stop()'...
             );
     end
-end    
+end
 end

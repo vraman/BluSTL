@@ -29,14 +29,15 @@ Sys.model_data.time = ((0:2*L-1)+max(t_model-L,0))*ts;
 i_transient = min(t_model,L);
 
 % test whether the input has already been computed
-if (Sys.model_data.time_index<t_model)
+if (Sys.model_data.time_index<t_model)||(~isempty(Sys.model_data.Wbad))
     Sys.model_data.time_index = t_model;
     
-    %% Sensing -- maybe will need to externalize that
-    if isempty(Sys.Wref)
-        Sys.Wref = 0*time;
+    %% Sensing -- maybe we should call this predict_disturbance
+    if isempty(Sys.model_data.Wbad)
+        Wn = sensing(Sys);
+    else % a disturbance has been obtained
+        Wn= Sys.model_data.Wbad;
     end
-    Wn = sensing(Sys);
     
     %% Initialize discrete data for the controller and environment
     donen = zeros(1,2*L-1); % done(1:k) = 1 iff everything has been computed up to step k
@@ -62,7 +63,8 @@ if (Sys.model_data.time_index<t_model)
         Sys.model_data.rob = double(sol_control{3});
         Sys.model_data.Y = [Sys.sysd.C*Sys.model_data.X(:,1:end-1) + Sys.sysd.D*[Sys.model_data.U; double(Wn(:,1:end-1))]];
         Sys.model_data.W = Wn;
-        
+        Sys.model_data.done = donen;
+        Sys.model_data.p = pn;
     elseif (errorflag1==1 || errorflag1==15||errorflag1==12)  % some error, infeasibility or else
         disp(['Yalmip error (disturbance too bad ?): ' yalmiperror(errorflag1)]); % probably there is no controller for this w
     else

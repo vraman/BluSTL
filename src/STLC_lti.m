@@ -38,12 +38,12 @@ classdef STLC_lti
     
     % adversary properties
     properties
-        Wref         % this defines a default or initial disturbance vector
-        w_lb         % lower bound on w relative to Wref
-        w_ub         % upper bound on w relative to Wref
-        stl_w_list   % stl properties for environment
+        Wref           % this defines a default or initial disturbance vector
+        w_lb           % lower bound on w relative to Wref
+        w_ub           % upper bound on w relative to Wref
+        stl_w_list     % stl properties for environment (TODO)
         max_react_iter % maximum number of iterations
-        adversary    % YALMIP parametric problem for the adversary
+        adversary      % YALMIP parametric problem for the adversary
     end
     
     % plotting properties
@@ -62,7 +62,7 @@ classdef STLC_lti
     % misc
     properties
         stop_button
-        verbosity
+        verbose
     end
     
     methods
@@ -247,6 +247,11 @@ classdef STLC_lti
         % reset system and model data
         function Sys = reset_data(Sys)
             
+            if isempty(Sys.Wref)
+                Sys.Wref = 0*Sys.time;
+            end
+
+            
             % implements nb_stages here
             if Sys.nb_stages>1
                 fprintf('Updating time and Wref based on nb_stages=%d\n', Sys.nb_stages); % TODO unverbose/verbose that out
@@ -278,6 +283,7 @@ classdef STLC_lti
             Sys.model_data.Y = [];
             Sys.model_data.U = [];
             Sys.model_data.W = [];
+            Sys.model_data.Wbad = [];
             
         end
         
@@ -287,6 +293,11 @@ classdef STLC_lti
             [Sys, status] = STLC_compute_input(Sys, controller);
         end
         
+        function [Sys, status] = compute_disturbance(Sys, adversary)
+            % computes the next input and update model data
+            % status is 0 if everything is OK
+            [Sys, status] = STLC_compute_disturbance(Sys, adversary);
+        end
         
         % Executes the controller in open loop mode
         function [Sys] = run_open_loop(Sys, controller)
@@ -305,16 +316,23 @@ classdef STLC_lti
             fprintf('\n'); 
         end
         
-        
         % Executes the controller in a receding horizon (MPC)
         function [Sys] = run_deterministic(Sys, controller)
+            global StopRequest;
+            StopRequest=0;
             Sys = Sys.reset_data();
             rfprintf_reset();
             current_time =0;
-            while (current_time < Sys.time(end)-Sys.L*Sys.ts)
+            while ((current_time < Sys.time(end)-Sys.L*Sys.ts)&&StopRequest==0)
                 out = sprintf('time:%g', current_time );
                 rfprintf(out);
-                Sys = Sys.compute_input(controller);
+                [Sys, status] = Sys.compute_input(controller);
+
+                if status~=0
+                    rfprintf_reset();
+                    StopRequest=1;
+                end
+
                 Sys = Sys.apply_input();
                 Sys = Sys.update_plot();
                 drawnow;
@@ -343,3 +361,9 @@ classdef STLC_lti
         end
     end
 end
+
+function Stop()
+global StopRequest;
+StopRequest = true;
+end
+
