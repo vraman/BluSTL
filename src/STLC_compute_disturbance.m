@@ -3,11 +3,12 @@ function [Sys, status] = STLC_compute_disturbance(Sys, adversary)
 %
 % Input:
 %       Sys: an STLC_lti instance
-%       controller: a YALMIP optimizer object representing the system's
+%       adversary: a YALMIP optimizer object representing the system's
 %                   optimization problem for adversary
 %
 % Output:
-%       Sys: modified with additional model_data
+%       Sys: modified with additional model_data, in particular a field
+%            Wbad containing a distu
 %       params: controller data
 %
 % :copyright: TBD
@@ -18,28 +19,30 @@ function [Sys, status] = STLC_compute_disturbance(Sys, adversary)
 
 donen =  Sys.model_data.done;
 pn    =  Sys.model_data.p;
-Xpred = Sys.model_data.X; 
+Xpred = Sys.model_data.X;
 Upred = Sys.model_data.U;
-Wrefn = sensing(Sys);  % so far, returns the discretized Wref...  
+Wrefn = sensing(Sys);  % so far, returns the discretized Wref...
 
 %% call solver
 [sol_adv, errorflag2] = adversary{{donen,pn,Xpred,Upred,Wrefn}};
-Wn = sol_adv{1}
-wcrob = sol_adv{3}
-           
+Wn = sol_adv{1};
+wcrob = sol_adv{3};
+
 if(errorflag2==0 && wcrob(1) <= 0)  % found a bad disturbance
-    disp(['Yalmip: ' 'Found a bad disturbance'])
+    afprintf(['.']);
     Sys.model_data.Wbad =Wn;
+    status = 0;
 elseif(errorflag2==0 && wcrob(1) > 0) % no disturbance can violate specs
-    fprintf('Control is good\n');
+%    afprintf('\nControl is good');
     Sys.model_data.Wbad =[];
+    status = 1;
 elseif (errorflag2==true || errorflag2==15||errorflag2==12)  % some error, infeasibility or else
     disp(['Yalmip error 1: ' yalmiperror(errorflag2)]);
+    status = 1;
 else
     disp(['Yalmip error 2: ' yalmiperror(errorflag2)]); % some other error
+    status = 1;
 end
-
-status = errorflag2;
 
 Sys.model_data.W =Wn;
 Sys.model_data.rob = wcrob;

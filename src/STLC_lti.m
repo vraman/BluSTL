@@ -12,6 +12,9 @@ classdef STLC_lti
         nw
         x0
         system_data
+        is_det  % if this is 1, will use only Wref as disturbance (e.g., ignore
+        % potential uncertainty defined in w_ub and w_lb).
+        % If empty, this is decided in reset_data() based on w_ub and w_lb.
     end
     
     
@@ -201,14 +204,21 @@ classdef STLC_lti
             U = [u0; w0];
             [Y,T,X] = lsim(Sys.sys, U',t-t(1),x0);
         end
-         
-        % get disturbance - default reads Wref
-        function w = get_disturbance(Sys) 
+        
+        % get disturbance - default reads Wref, adds random value in
+        % disturbance range
+        function w = get_disturbance(Sys)
+            
             it = Sys.system_data.time_index;
             w = [Sys.Wref(:,it) Sys.Wref(:,it+1)];
-
-        end
             
+            if ~Sys.is_det
+                dw = ((Sys.w_ub-Sys.w_lb)').*(2*rand(Sys.nw,1)-1)/3;
+                w = w + [dw dw];
+            end
+            
+        end
+        
         % Applies input for one discrete step, updates the model data
         % requires that compute_input was called before
         function Sys = apply_input(Sys)
@@ -250,7 +260,14 @@ classdef STLC_lti
             if isempty(Sys.Wref)
                 Sys.Wref = 0*Sys.time;
             end
-
+            
+            if isempty(Sys.is_det)
+                if any(Sys.w_ub-Sys.w_lb)
+                    Sys.is_det = 0;
+                else
+                    Sys.is_det = 1;
+                end
+            end
             
             % implements nb_stages here
             if Sys.nb_stages>1
@@ -293,29 +310,41 @@ classdef STLC_lti
             [Sys, status] = STLC_compute_input(Sys, controller);
         end
         
+        % computes the next disturbance and update model data
+        % status is 0 if a bad disturbance was found, 1 if control is
+        % good (no bad disturbance exist and -1 if some other error occured
         function [Sys, status] = compute_disturbance(Sys, adversary)
-            % computes the next input and update model data
-            % status is 0 if everything is OK
             [Sys, status] = STLC_compute_disturbance(Sys, adversary);
         end
+        
+        % Combines compute_input and compute_disturbance, and tries to
+        % find an input valid for all possible disturbances.
+        function [Sys, status_u, status_w] = compute_input_adv(Sys, controller, adversary)
+            [Sys, status_u, status_w] = STLC_compute_input_adv(Sys, controller, adversary);
+        end
+        
         
         % Executes the controller in open loop mode
         function [Sys] = run_open_loop(Sys, controller)
             Sys = Sys.reset_data();
             rfprintf_reset();
-            Sys = Sys.compute_input(controller);
-            current_time =0;
-            while (current_time < Sys.model_data.time(end)-Sys.ts)
-                out = sprintf('time:%g', current_time );
-                rfprintf(out);
-                Sys = Sys.apply_input();
-                Sys = Sys.update_plot();
-                drawnow;
-                current_time= Sys.system_data.time(end);
+            [Sys, status] = Sys.compute_input(controller);
+            
+            if status==0
+                current_time =0;
+                while (current_time < Sys.model_data.time(end)-Sys.ts)
+                    out = sprintf('time:%g', current_time );
+                    rfprintf(out);
+                    Sys = Sys.apply_input();
+                    Sys = Sys.update_plot();
+                    drawnow;
+                    current_time= Sys.system_data.time(end);
+                end
+                fprintf('\n');      
             end
-            fprintf('\n'); 
+            
         end
-        
+              
         % Executes the controller in a receding horizon (MPC)
         function [Sys] = run_deterministic(Sys, controller)
             global StopRequest;
@@ -327,12 +356,12 @@ classdef STLC_lti
                 out = sprintf('time:%g', current_time );
                 rfprintf(out);
                 [Sys, status] = Sys.compute_input(controller);
-
+                
                 if status~=0
                     rfprintf_reset();
                     StopRequest=1;
                 end
-
+                
                 Sys = Sys.apply_input();
                 Sys = Sys.update_plot();
                 drawnow;
@@ -342,22 +371,64 @@ classdef STLC_lti
         end
         
         % Executes controller and adversary in open loop
-        function [Sys, params] = run_open_loop_adv(Sys, controller, adversary)
-            [Sys, params] = STLC_run_open_loop_adv(Sys, controller, adversary);
+        function Sys = run_open_loop_adv(Sys, controller, adversary)
+            Sys = Sys.reset_data();
+            [Sys, status_u, status_w] = compute_input_adv(Sys, controller, adversary) 
+            
+            if (status_w ~= 1)
+                warning('The control input might not be robust.')
+            end
+            
+            if status_u==0
+                current_time =0;
+                while (current_time < Sys.model_data.time(end)-Sys.ts)
+                    out = sprintf('time:%g', current_time );
+                    rfprintf(out);
+                    Sys = Sys.apply_input();
+                    Sys = Sys.update_plot();
+                    drawnow;
+                    current_time= Sys.system_data.time(end);
+                end
+                fprintf('\n');
+            end
+
+            
+            
         end
         
         % Executes controller and adversary in receding horizon mode (MPC)
-        function [Sys, params] = run_adversarial(Sys, controller, adversary)
-            [Sys, params] = STLC_run_adversarial(Sys, controller, adversary);
+        function Sys = run_adversarial(Sys, controller, adversary)
+            global StopRequest;
+            StopRequest=0;
+            Sys = Sys.reset_data();
+            rfprintf_reset();
+            current_time =0;
+            while ((current_time < Sys.time(end)-Sys.L*Sys.ts)&&StopRequest==0)
+                out = sprintf('time:%g', current_time );
+                rfprintf(out);
+                [Sys, status] = Sys.compute_input_adv(controller, adversary);
+                
+                if status~=0
+                    rfprintf_reset();
+                    StopRequest=1;
+                end
+                
+                Sys = Sys.apply_input();
+                Sys = Sys.update_plot();
+                drawnow;
+                current_time= Sys.system_data.time(end);
+            end
+            fprintf('\n');
         end
+                    
         
         % Default plot function
         function Sys = update_plot(Sys)
             Sys = STLC_update_plot(Sys);
         end
         
-        function Wn = sensing(HR)
-            Wn = STLC_sensing(HR);
+        function Wn = sensing(Sys)
+            Wn = STLC_sensing(Sys);
         end
     end
 end
