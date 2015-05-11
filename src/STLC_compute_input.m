@@ -23,12 +23,11 @@ M = Sys.bigM; % big M
 %% Time
 ts=Sys.ts; % sampling time
 L=Sys.L;  % horizon (# of steps)
-time = Sys.time; % time for the system
 t_model = floor(Sys.time(Sys.system_data.time_index)/Sys.ts)+1;
 Sys.model_data.time = ((0:2*L-1)+max(t_model-L,0))*ts;
 i_transient = min(t_model,L);
 
-% test whether the input has already been computed
+%% test whether the input has already been computed
 if (Sys.model_data.time_index<t_model)||(~isempty(Sys.model_data.Wbad))
     Sys.model_data.time_index = t_model;
     
@@ -72,6 +71,7 @@ if (Sys.model_data.time_index<t_model)||(~isempty(Sys.model_data.Wbad))
     end
     status = errorflag1;
 
+%% else do nothing    
 else
     status=0;
 end

@@ -1,10 +1,5 @@
 classdef hvac_room <STLC_lti
     
-    properties
-        
-       det; 
-    end
-    
     methods
         function HR = hvac_room()
             load hvac_room_data  % note: this file is created by Init_RoomHVAC
@@ -34,9 +29,9 @@ classdef hvac_room <STLC_lti
             load hvac_room_data
            
             if epsi==0
-                HR.det = 1;
+                HR.is_det = 1;
             else
-                HR.det = 0;
+                HR.is_det = 0;
             end
             
             %% Controller Initialisation
@@ -84,7 +79,7 @@ classdef hvac_room <STLC_lti
             tic
             HR.controller = get_controller(HR);
             toc
-            if ~HR.det
+            if ~HR.is_det
             fprintf('Computing adversary...\n');
             tic
             HR.adversary = get_adversary(HR);
@@ -117,21 +112,21 @@ if isempty(Sys.h)
     
     % Troom
     Sys.h.Tpast = plot(Sys.system_data.time/60, Sys.system_data.X(5,:), 'LineWidth',2);
+    Sys.h.Tmodel = plot(Sys.model_data.time/60,Sys.model_data.X(5,:), '--g','LineWidth',2);
    
     % Tout
     Sys.h.Toutpast = plot(Sys.system_data.time/60, Sys.system_data.W(3,:), '-m', 'LineWidth',2);
-    Sys.h.Tmodel = plot(Sys.model_data.time/60,Sys.model_data.X(5,:), '--g','LineWidth',2);
   
     % Comfort region
     plot(time/60, Wref(6,:), '-k','LineWidth',2)
     legend('Room Temperature', 'Outside Temperature','Model prediction', 'Comfort Region')  
     plot(time/60, 2*70-Wref(6,:), '-k','LineWidth',2)
    
-    if ~Sys.det
+    if ~Sys.is_det
         % Tout bounds
-        plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_lb(3), '-m','LineWidth',1)
-        plot(time(1:60:end)/60, Wref(3,1:60:end), '--m','LineWidth',1);
-        plot(time(1:60:end)/60, Wref(3,1:60:end)+Sys.w_ub(3), '-m','LineWidth',1)
+        plot(time/60, Wref(3,:)+Sys.w_lb(3), '-m','LineWidth',1)
+        plot(time/60, Wref(3,:), '--m','LineWidth',1);
+        plot(time/60, Wref(3,:)+Sys.w_ub(3), '-m','LineWidth',1)
     end
     
     %  xlabel('Time (hours)')

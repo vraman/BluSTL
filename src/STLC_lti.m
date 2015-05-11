@@ -373,7 +373,7 @@ classdef STLC_lti
         % Executes controller and adversary in open loop
         function Sys = run_open_loop_adv(Sys, controller, adversary)
             Sys = Sys.reset_data();
-            [Sys, status_u, status_w] = compute_input_adv(Sys, controller, adversary) 
+            [Sys, status_u, status_w] = compute_input_adv(Sys, controller, adversary);
             
             if (status_w ~= 1)
                 warning('The control input might not be robust.')

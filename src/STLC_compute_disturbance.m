@@ -50,7 +50,6 @@ Sys.model_data.X = double(sol_adv{2});
 Sys.model_data.Y = [Sys.sysd.C*Sys.model_data.X(:,1:end-1) + Sys.sysd.D*[Sys.model_data.U; double(Wn(:,1:end-1))]];
 
 
-
 end
 
 
