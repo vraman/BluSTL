@@ -69,6 +69,7 @@ classdef STLC_lti
     end
     
     methods
+        % Constructor
         function Sys = STLC_lti(varargin)
             
             switch nargin
@@ -199,13 +200,25 @@ classdef STLC_lti
             
         end
         
+        % default objective function r is the robust sat. and wr a weight
+        function obj = get_objective(Sys, X, Y, U,W, rho,wr)
+            switch nargin
+                case {4,5}
+                    obj = sum(sum(abs(U))); % minimize U
+                case 6
+                    obj = sum(sum(abs(U)))-sum(sum(rho)); % minimize U penalized by r
+                case 7
+                    obj = sum(sum(abs(U)))-wr*sum(sum(rho));
+            end
+        end
+               
         % System step, using the continuous time simulation
         function [Y,T,X] = system_step(Sys, u0, t, x0, w0)
             U = [u0; w0];
             [Y,T,X] = lsim(Sys.sys, U',t-t(1),x0);
         end
         
-        % get disturbance - default reads Wref, adds random value in
+        % Get disturbance - default reads Wref, adds random value in
         % disturbance range
         function w = get_disturbance(Sys)
             
@@ -218,25 +231,14 @@ classdef STLC_lti
             end
             
         end
-        
+              
         % Applies input for one discrete step, updates the model data
         % requires that compute_input was called before
         function Sys = apply_input(Sys)
             Sys = STLC_apply_input(Sys);
         end
         
-        % default objective function r is the robust sat. and wr a weight
-        function obj = get_objective(Sys, X, Y, U,W, rho,wr)
-            switch nargin
-                case {4,5}
-                    obj = sum(sum(abs(U))); % minimize U
-                case 6
-                    obj = sum(sum(abs(U)))-sum(sum(rho)); % minimize U penalized by r
-                case 7
-                    obj = sum(sum(abs(U)))-wr*sum(sum(rho));
-            end
-        end
-        
+        % Computes the optimizer object for the controller
         function controller = get_controller(Sys,enc)
             if nargin < 2
                 if isempty(Sys.encoding)
@@ -249,6 +251,7 @@ classdef STLC_lti
             controller = STLC_get_controller(Sys,enc);
         end
         
+        % Computes the optimizer object for the adversary/disturbance
         function adversary = get_adversary(Sys)
             Sys.sysd = c2d(Sys.sys, Sys.ts);
             adversary = STLC_get_adversary(Sys);
@@ -304,6 +307,7 @@ classdef STLC_lti
             
         end
         
+        %
         function [Sys, status] = compute_input(Sys, controller)
             % computes the next input and update model data
             % status is 0 if everything is OK
@@ -340,11 +344,11 @@ classdef STLC_lti
                     drawnow;
                     current_time= Sys.system_data.time(end);
                 end
-                fprintf('\n');      
+                fprintf('\n');
             end
             
         end
-              
+        
         % Executes the controller in a receding horizon (MPC)
         function [Sys] = run_deterministic(Sys, controller)
             global StopRequest;
@@ -391,8 +395,6 @@ classdef STLC_lti
                 end
                 fprintf('\n');
             end
-
-            
             
         end
         
@@ -420,7 +422,7 @@ classdef STLC_lti
             end
             fprintf('\n');
         end
-                    
+        
         
         % Default plot function
         function Sys = update_plot(Sys)

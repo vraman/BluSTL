@@ -24,6 +24,7 @@ classdef hvac_room <STLC_lti
             %   HR = init_control(HR);
         end
     end
+    
     methods
         function HR = init_control(HR,L,epsi, lambda_rho)
             load hvac_room_data
@@ -87,6 +88,12 @@ classdef hvac_room <STLC_lti
             end
             
         end
+        
+        function [Y,T,X] = system_step(Sys, u0, t, x0, w0)
+            U = [u0; w0];
+            [Y,T,X] = lsim(Sys.sys, U',t-t(1),x0);
+        end
+ 
         
         function HR = update_plot(HR)
                 HR = plot_adversary(HR);
