@@ -11,6 +11,7 @@ classdef STLC_lti < handle
         nu
         nw
         x0
+        K
         system_data
         is_det  % if this is 1, will use only Wref as disturbance (e.g., ignore
         % potential uncertainty defined in w_ub and w_lb).
@@ -158,6 +159,8 @@ classdef STLC_lti < handle
             Sys.nw = size(Bw,2);
             Sys.ny = size(C,1);
             Sys.x0 = zeros(Sys.nx,1);
+            Sys.K = zeros(Sys.nx,1); % additive component for control
+
             
             
             % default label names
@@ -179,7 +182,17 @@ classdef STLC_lti < handle
             end
             
             % default options
-            Sys.solver_options = sdpsettings('solver','gurobi','verbose',1, 'cachesolvers',1);
+            
+            solver = 'gurobi';  % gurobi, cplex, glpk
+            timeLimit = 2000;
+            gapLimit = 0.1;
+            solnLimit = Inf;
+            verb = 1;
+            Sys.solver_options = sdpsettings('verbose', verb,'solver', solver, ...
+                          'gurobi.TimeLimit', timeLimit, ...
+                          'gurobi.MIPGap', gapLimit, ...
+                          'gurobi.SolutionLimit', solnLimit,'cachesolvers',1);
+
             Sys.min_rob = 0.01;
             Sys.lambda_rho = 0;
             Sys.bigM = 1000;
@@ -372,9 +385,9 @@ classdef STLC_lti < handle
             while ((current_time < Sys.time(end)-Sys.L*Sys.ts)&&StopRequest==0)
                 out = sprintf('time:%g', current_time );
                 rfprintf(out);
-                [Sys, status] = Sys.compute_input_adv(controller, adversary);
+                [Sys, status_u, status_w] = Sys.compute_input_adv(controller, adversary);
                 
-                if status~=0
+                if status_u~=0
                     rfprintf_reset();
                     StopRequest=1;
                 end
