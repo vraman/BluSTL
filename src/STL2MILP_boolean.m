@@ -43,7 +43,7 @@ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
     switch (phi.type)
         
         case 'predicate'
-            [F,P] = pred(phi.st,k,var);
+            [F,P] = pred(phi.st,kList,kMax,var);
             
         case 'not'
             [Frest,Prest] = STL2MILP_boolean(phi.phi,kList,kMax,ts, var,M);
@@ -152,14 +152,14 @@ function [F,z] = pred(st,kList,kMax,var)
 %         t_st = regexprep(t_st,',t\)',[',',num2str(kList(l)) '\)']);
         
         % ADD VARIABLES
-        zl = sdpvar(size(eval(t_st),1),1);
+        zl = sdpvar(size((t_st),1),1);
         zAll = [zAll,zl];
         
         
         % ADD CONSTRAINTS
         
         %bigM_l = regexprep(bigMst1,'\(t',['\(',num2str(kList(l))]);
-        bigM = regexprep(bigMstl,',t\)',[',',num2str(kList(l)) '\)']);
+        bigM = regexprep(bigMst1,',t\)',[',',num2str(kList(l)) '\)']);
         t_st1 = [t_st '<=' bigM];
         F = [F, eval(t_st1)];
         

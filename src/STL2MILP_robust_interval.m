@@ -196,13 +196,13 @@ function [F,P_alwlow,P_alwup] = always(Plow,Pup,a,b,kList,kMax,M)
         ia_real = find(kListAlw==ia);
         ib_real = find(kListAlw==ib);
         [F0,P0low,P0up] = and(Plow(ia_real:ib_real)',Pup(ia_real:ib_real)',M);
-        if over
-            F0 = [F0, P_alwlow(i) == -M*.9];
+        if over >=1
+            F0 = [F0, P_alwlow(i) == -M];
         else
             F0 = [F0, P_alwlow(i)==P0low];
         end
         if over == 2
-            F0 = [F0, P_evlup(i) == M*.9];
+            F0 = [F0, P_alwup(i) == M];
         else
             F = [F;F0,P_alwup(i)==P0up];
         end
@@ -225,12 +225,12 @@ function [F,P_evlow,P_evup] = eventually(Plow,Pup,a,b,kList,kMax,M)
         ib_real = find(kListEv==ib);
         [F0,P0low,P0up] = or(Plow(ia_real:ib_real)',Pup(ia_real:ib_real)',M);
         if over >=1
-            F0 = [F0, P_evup(i) == M*.9];
+            F0 = [F0, P_evup(i) == M];
         else
             F0 = [F0, P_evup(i)==P0up];
         end
         if over == 2
-            F0 = [F0, P_evlow(i) == -M*.9];
+            F0 = [F0, P_evlow(i) == -M];
         else
             F = [F;F0,P_evlow(i)==P0low];
         end
@@ -281,14 +281,10 @@ function [F,Plow,Pup] = min_r(p_list1,p_list2,M)
         for i=1:m
             F = [F, Plow(t) <= p_list1(i,t)];     
             F = [F, p_list1(i,t) - (1-z1(i,t))*M <= Plow(t) <= p_list1(i,t) + (1-z1(i,t))*M];
-            F = [F, Plow(t) <= p_list1(i,t)];     
-            F = [F, p_list1(i,t) - (1-z1(i,t))*M <= Plow(t) <= p_list1(i,t) + (1-z1(i,t))*M];
-        
+            
             F = [F, Pup(t) <= p_list2(i,t)];     
             F = [F, p_list2(i,t) - (1-z2(i,t))*M <= Pup(t) <= p_list2(i,t) + (1-z2(i,t))*M];
-            F = [F, Pup(t) <= p_list2(i,t)];     
-            F = [F, p_list2(i,t) - (1-z2(i,t))*M <= Pup(t) <= p_list2(i,t) + (1-z2(i,t))*M];
-        
+            
         end
     end
 end
