@@ -22,6 +22,7 @@ StopRequest=0;
 Sys = Sys.reset_data();
 rfprintf_reset();
 current_time =0;
+
 while ((current_time < Sys.time(end)-Sys.L*Sys.ts)&&StopRequest==0)
     out = sprintf('time:%g', current_time );
     rfprintf(out);
@@ -30,6 +31,7 @@ while ((current_time < Sys.time(end)-Sys.L*Sys.ts)&&StopRequest==0)
     if status~=0
         rfprintf_reset();
         StopRequest=1;
+        break;
     end
     
     Sys = Sys.apply_input();

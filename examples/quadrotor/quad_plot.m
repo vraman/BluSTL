@@ -33,6 +33,7 @@ function QS = quad_plot(QS)
                                   'string','Stop',...
                                   'callback','Stop()'...
                               );        
+            axis([0 6 0 6 0 6]);
         else
 
             set(QS.h.Xpast,'XData', QS.system_data.Y(1,:), 'YData', QS.system_data.Y(2,:), 'ZData', QS.system_data.Y(3,:));

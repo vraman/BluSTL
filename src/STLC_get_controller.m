@@ -174,13 +174,13 @@ switch enc
         obj = get_objective(Sys,X,Y,U,W);
     case 'robust'
         %obj=1;
-        obj = norm(U,1);
-        %obj = get_objective(Sys,X,Y,U,W, Pstl(:,1:L-1), Sys.lambda_rho);
+        %obj = norm(U,1);
+        obj = get_objective(Sys,X,Y,U,W, Pstl(:,1:L-1), Sys.lambda_rho);
         %obj = -sum(sum(Pstl(:,:)));
     case 'interval'
-        %obj = get_objective(Sys,X,Y,U,W, Pstllow(:,1:L-1), Sys.lambda_rho);
+        obj = get_objective(Sys,X,Y,U,W, Pstllow(:,1:L-1), Sys.lambda_rho);
         %obj = -min(min(Pstllow(:,:)));
-        obj = -sum(sum(Pstllow(:,:)));
+%        obj = -sum(sum(Pstllow(:,:)));
 end
 
 controller = optimizer([Fdyn, Fstl, Fu],obj,options,param_controller, output_controller);
