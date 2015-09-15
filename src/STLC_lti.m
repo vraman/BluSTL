@@ -1,4 +1,4 @@
-classdef STLC_lti
+classdef STLC_lti < handle
     %STLC_lti generic ABCD/ABuBwCDuDw system controller
     %
     
@@ -330,48 +330,12 @@ classdef STLC_lti
         
         % Executes the controller in open loop mode
         function [Sys] = run_open_loop(Sys, controller)
-            Sys = Sys.reset_data();
-            rfprintf_reset();
-            [Sys, status] = Sys.compute_input(controller);
-            
-            if status==0
-                current_time =0;
-                while (current_time < Sys.model_data.time(end)-Sys.ts)
-                    out = sprintf('time:%g', current_time );
-                    rfprintf(out);
-                    Sys = Sys.apply_input();
-                    Sys = Sys.update_plot();
-                    drawnow;
-                    current_time= Sys.system_data.time(end);
-                end
-                fprintf('\n');
-            end
-            
+            Sys = STLC_run_open_loop(Sys, controller);
         end
         
         % Executes the controller in a receding horizon (MPC)
         function [Sys] = run_deterministic(Sys, controller)
-            global StopRequest;
-            StopRequest=0;
-            Sys = Sys.reset_data();
-            rfprintf_reset();
-            current_time =0;
-            while ((current_time < Sys.time(end)-Sys.L*Sys.ts)&&StopRequest==0)
-                out = sprintf('time:%g', current_time );
-                rfprintf(out);
-                [Sys, status] = Sys.compute_input(controller);
-                
-                if status~=0
-                    rfprintf_reset();
-                    StopRequest=1;
-                end
-                
-                Sys = Sys.apply_input();
-                Sys = Sys.update_plot();
-                drawnow;
-                current_time= Sys.system_data.time(end);
-            end
-            fprintf('\n');
+            STLC_run_deterministic(Sys, controller);
         end
         
         % Executes controller and adversary in open loop
@@ -435,8 +399,4 @@ classdef STLC_lti
     end
 end
 
-function Stop()
-global StopRequest;
-StopRequest = true;
-end
 
