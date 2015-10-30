@@ -28,7 +28,7 @@ ny=Sys.ny;
 % variables
 X = sdpvar(nx, 2*L); 
 U = sdpvar(nu, 2*L-1);
-Y = sdpvar(ny, 2*L-1);
+Y = sdpvar(ny, 2*L);
 
 % parameters 
 W = sdpvar(nw, 2*L);
