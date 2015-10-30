@@ -7,7 +7,8 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,kList,kMax,ts,var,M)
 %
 % Input: 
 %       phi:    an STLformula
-%       k:      the length of the trajectory
+%       kList:  a list of time steps at which the formula is to be enforced
+%       kMAx:   the length of the trajectory
 %       ts:     the interval (in seconds) used for discretizing time
 %       var:    a dictionary mapping strings to variables
 %       M:   	a large positive constant used for big-M constraints  
@@ -16,7 +17,7 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,kList,kMax,ts,var,M)
 %       F:  YALMIP constraints
 %       P:  a struct containing YALMIP decision variables representing 
 %           upper (Plow) and lower (Pup) bounds on quantitative satisfaction 
-%           of phi over each time step from 1 to k 
+%           of phi over each time step in kList
 %
 % :copyright: TBD
 % :license: TBD
@@ -50,7 +51,7 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,kList,kMax,ts,var,M)
     switch (phi.type)
         
         case 'predicate'
-            [F,Plow,Pup] = pred(phi.st,kList,kMax,var,M);
+            [F,Plow,Pup] = pred(phi.st,kList,var,M);
                      
         case 'not'
             [Frest,Prest_low,Prest_up] = STL2MILP_robust_interval(phi.phi,kList,kMax,ts, var,M);
@@ -112,9 +113,8 @@ function [F,Plow,Pup] = STL2MILP_robust_interval(phi,kList,kMax,ts,var,M)
     end   
 end
 
-function [F,z1,z2] = pred(st,kList,kMax,var,M)
+function [F,z1,z2] = pred(st,kList,var,M)
     % Enforce constraints based on predicates 
-    % 
     % var is the variable dictionary    
         
     fnames = fieldnames(var);
@@ -147,13 +147,13 @@ function [F,z1,z2] = pred(st,kList,kMax,var,M)
         zAll = [zAll, z];
     end
     
-    % take the and over all dimension for multi-dimensional signals
-    % this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
-    %z = sdpvar(1,k);
-    %for i=1:min(k,size(zAll,2))
-    %   [Fnew, z(:,i)] = and(zAll(:,i),zAll(:,i),M);
-    %   F = [F, Fnew];
-    %end
+    %take the and over all dimension for multi-dimensional signals
+    %this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
+    z = sdpvar(1,k);
+    for i=1:min(k,size(zAll,2))
+      [Fnew, z(:,i)] = and(zAll(:,i),zAll(:,i),M);
+      F = [F, Fnew];
+    end
     
     z1 = zAll;
     z2 = zAll;

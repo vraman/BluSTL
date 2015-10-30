@@ -4,7 +4,8 @@ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
 %
 % Input: 
 %       phi:    an STLformula
-%       k:      the length of the trajectory
+%       kList:  a list of time steps at which the formula is to be enforced
+%       kMAx:   the length of the trajectory
 %       ts:     the interval (in seconds) used for discretizing time
 %       var:    a dictionary mapping strings to variables
 %       M:   	a large positive constant used for big-M constraints  
@@ -12,11 +13,11 @@ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
 % Output: 
 %       F:  YALMIP constraints
 %       P:  YALMIP decision variables representing the boolean satisfaction 
-%           over each time step from 1 to k 
+%           over each time step in kList
 %
 % :copyright: TBD
 % :license: TBD
-
+    
     if (nargin==4);
         M = 1000;
     end;
@@ -43,7 +44,7 @@ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
     switch (phi.type)
         
         case 'predicate'
-            [F,P] = pred(phi.st,kList,kMax,var);
+            [F,P] = pred(phi.st,kList,var);
             
         case 'not'
             [Frest,Prest] = STL2MILP_boolean(phi.phi,kList,kMax,ts, var,M);
@@ -74,7 +75,7 @@ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
             P = Pimp;
             
         case 'always'
-            kListAlw = unique(cell2mat(arrayfun(@(k) {k + a: k + b}, kList)));
+            kListAlw = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a): min(kMax,k + b)}, kList)));
             [Frest,Prest] = STL2MILP_boolean(phi.phi,kListAlw,kMax,ts, var,M);
             [Falw, Palw] = always(Prest, a,b, kList,kMax);
             F = [F, Falw];
@@ -82,7 +83,7 @@ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
             F = [F, Frest];
 
         case 'eventually'
-            kListEv = unique(cell2mat(arrayfun(@(k) {k + a: k + b}, kList)));
+            kListEv = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a): min(kMax,k + b)}, kList)));
             [Frest,Prest] = STL2MILP_boolean(phi.phi,kListEv,kMax,ts, var,M);
             [Fev, Pev] = eventually(Prest, a,b, kList,kMax);
             F = [F, Fev];
@@ -98,11 +99,10 @@ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
     end
 end
 
-function [F,z] = pred(st,kList,kMax,var)
+function [F,z] = pred(st,kList,var)
     % Enforce constraints based on predicates 
-    % 
     % var is the variable dictionary    
-        
+    
     fnames = fieldnames(var);
     
     for ifield= 1:numel(fnames)
@@ -131,51 +131,32 @@ function [F,z] = pred(st,kList,kMax,var)
     
     for l=1:k
         
-        % the below conditional statements allow specifications to refer to
-        % the previous and next time steps (e.g. when controlling input)
         t_st = st;
         t_st = regexprep(t_st,'\<t\>', num2str(kList(l)));
-        
-%       DEPRECATED CASES
-%         if l<k
-%             t_st = regexprep(t_st,'t+1\)',[num2str(kList(l)+1) '\)']);
-%         else
-%             t_st = regexprep(t_st,'t+1\)',[num2str(kList(l)) '\)']);
-%         end
-%         if l>1
-%             t_st = regexprep(t_st,'t-1\)',[num2str(kList(l)-1) '\)']);
-%         else
-%             t_st = regexprep(t_st,'t-1\)',[num2str(kList(l)) '\)']);
-%         end
-% 
-%         t_st = regexprep(t_st,'\(t',['\(',num2str(kList(l))]);
-%         t_st = regexprep(t_st,',t\)',[',',num2str(kList(l)) '\)']);
-        
+
         % ADD VARIABLES
         zl = sdpvar(size((t_st),1),1);
         zAll = [zAll,zl];
         
-        
         % ADD CONSTRAINTS
         
-        %bigM_l = regexprep(bigMst1,'\(t',['\(',num2str(kList(l))]);
         bigM = regexprep(bigMst1,',t\)',[',',num2str(kList(l)) '\)']);
         t_st1 = [t_st '<=' bigM];
         F = [F, eval(t_st1)];
         
-        %bigM_l = regexprep(bigMst2,'\(t',['\(',num2str(kList(l))]);
         bigM = regexprep(bigMst2,',t\)',[',',num2str(kList(l)) '\)']);
         t_st2 = ['-(' t_st ') <= ' bigM];
         F = [F, eval(t_st2)];
         
     end
     
-%     % take the and over all dimension for multi-dimensional signals
-%     z = sdpvar(1,k);
-%     for i=1:k
-%         [Fnew, z(:,i)] = and(zAll(:,i));
-%         F = [F, Fnew];
-%     end
+    % take the and over all dimension for multi-dimensional signals
+    %this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
+    z = sdpvar(1,k);
+    for i=1:k
+        [Fnew, z(:,i)] = and(zAll(:,i));
+        F = [F, Fnew];
+    end
     
 end
 
@@ -218,8 +199,7 @@ function [F,P_alw] = always(P, a,b,kList,kMax)
     F = [];
     k = size(kList,2);
     P_alw = sdpvar(1,k);
-    kListAlw = unique(cell2mat(arrayfun(@(k) {k + a : k + b}, kList)));
-    
+    kListAlw = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a) : min(kMax,k + b)}, kList)));    
     for i = 1:k
         [ia, ib] = getIndices(kList(i),a,b,kMax);
         ia_real = find(kListAlw==ia);
@@ -235,7 +215,7 @@ function [F,P_ev] = eventually(P, a,b,kList,kMax)
     F = [];
     k = size(kList,2);
     P_ev = sdpvar(1,k);
-    
+    kListEv = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a) : min(kMax,k + b)}, kList)));   
     for i = 1:k
         [ia, ib] = getIndices(kList(i),a,b,kMax);
         ia_real = find(kListEv==ia);

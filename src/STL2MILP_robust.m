@@ -4,7 +4,8 @@ function [F,P] = STL2MILP_robust(phi,kList,kMax,ts,var,M)
 %
 % Input: 
 %       phi:    an STLformula
-%       k:      the length of the trajectory
+%       kList:  a list of time steps at which the formula is to be enforced
+%       kMAx:   the length of the trajectory
 %       ts:     the interval (in seconds) used for discretizing time
 %       var:    a dictionary mapping strings to variables
 %       M:   	a large positive constant used for big-M constraints  
@@ -12,8 +13,8 @@ function [F,P] = STL2MILP_robust(phi,kList,kMax,ts,var,M)
 % Output: 
 %       F:  YALMIP constraints
 %       P:  a struct containing YALMIP decision variables representing 
-%           the quantitative satisfaction of phi over each time step from 
-%           1 to k 
+%           the quantitative satisfaction of phi over each time step in
+%           kList
 %
 % :copyright: TBD
 % :license: TBD
@@ -44,7 +45,7 @@ function [F,P] = STL2MILP_robust(phi,kList,kMax,ts,var,M)
     switch (phi.type)
         
         case 'predicate'
-            [F,P] = pred(phi.st,kList,kMax,var,M);
+            [F,P] = pred(phi.st,kList,var,M);
                      
         case 'not'
             [Frest,Prest] = STL2MILP_robust(phi.phi,kList,kMax,ts, var,M);
@@ -75,7 +76,7 @@ function [F,P] = STL2MILP_robust(phi,kList,kMax,ts,var,M)
             P = [Pimp,P];
             
         case 'always'
-            kListAlw = unique(cell2mat(arrayfun(@(k) {k + a: k + b}, kList)));
+            kListAlw = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a): min(kMax,k + b)}, kList)));
             [Frest,Prest] = STL2MILP_robust(phi.phi,kListAlw,kMax,ts, var,M);
             [Falw, Palw] = always(Prest,a,b,kList,kMax,M);
             F = [F, Falw];
@@ -83,7 +84,7 @@ function [F,P] = STL2MILP_robust(phi,kList,kMax,ts,var,M)
             F = [F, Frest];
 
         case 'eventually'
-            kListEv = unique(cell2mat(arrayfun(@(k) {k + a: k + b}, kList)));
+            kListEv = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a): min(kMax,k + b)}, kList)));
             [Frest,Prest] = STL2MILP_robust(phi.phi,kListEv,kMax,ts, var,M);
             [Fev, Pev] = eventually(Prest,a,b,kList,kMax,M);
             F = [F, Fev];
@@ -99,9 +100,8 @@ function [F,P] = STL2MILP_robust(phi,kList,kMax,ts,var,M)
     end
 end
 
-function [F,z] = pred(st,kList,kMax,var,M)
+function [F,zAll] = pred(st,kList,var,M)
     % Enforce constraints based on predicates 
-    % 
     % var is the variable dictionary    
         
     fnames = fieldnames(var);
@@ -121,7 +121,7 @@ function [F,z] = pred(st,kList,kMax,var,M)
     end
          
     F = [];
-    z = [];
+    zAll = [];
     
     k = size(kList,2);
     
@@ -131,17 +131,21 @@ function [F,z] = pred(st,kList,kMax,var,M)
         try 
             zl = eval(t_st);
         end
-        z = [z,zl];
+        zAll = [zAll,zl];
     end
     
-    % 
-    % take the and over all dimension for multi-dimensional signals
-    % z = sdpvar(1,k);
-    % for i=1:k
-    %    [Fnew, z(:,i)] = and(zAll(:,i),M);
-    %    F = [F, Fnew];
-    % end
+    z = zAll;
+    
+    
+    %take the and over all dimension for multi-dimensional signals
+    %this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
+    z = sdpvar(1,k);
+    for i=1:k
+       [Fnew, z(:,i)] = and(zAll(:,i),M);
+       F = [F, Fnew];
+    end
 end
+
 
 % BOOLEAN OPERATIONS
 
@@ -169,7 +173,7 @@ function [F,P_alw] = always(P, a,b,kList,kMax,M)
     F = [];
     k = size(kList,2);
     P_alw = sdpvar(1,k);
-    kListAlw = unique(cell2mat(arrayfun(@(k) {k + a : k + b}, kList)));
+    kListAlw = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a) : min(kMax,k + b)}, kList)));
     
     for i = 1:k
         [ia, ib] = getIndices(kList(i),a,b,kMax);
@@ -186,7 +190,7 @@ function [F,P_ev] = eventually(P, a,b,kList,kMax,M)
     F = [];
     k = size(kList,2);
     P_ev = sdpvar(1,k);
-    kListEv = unique(cell2mat(arrayfun(@(k) {k + a : k + b}, kList)));
+    kListEv = unique(cell2mat(arrayfun(@(k) {min(kMax,k + a) : min(kMax,k + b)}, kList)));
     
     for i = 1:k
         [ia, ib] = getIndices(i,a,b,kMax);
