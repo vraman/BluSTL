@@ -36,6 +36,7 @@ classdef STLC_lti < handle
         lambda_t1  %  used for the interval encoding to weight the first time
                    %  step higher than the rest
         bigM
+        nrm       % norm (default is 1)
         solver_options
         model_data
         controller    % YALMIP parametric problem for the controller
@@ -200,6 +201,7 @@ classdef STLC_lti < handle
             Sys.lambda_t1 = 1;
             Sys.bigM = 1000;
             Sys.u_delta = Inf;
+            Sys.nrm = 1;
             Sys.max_react_iter = 10;
             Sys.nb_stages = 1;
             Sys.stop_button = 0;
