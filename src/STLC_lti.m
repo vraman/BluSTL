@@ -226,7 +226,7 @@ classdef STLC_lti < handle
                 case 7
                     obj = norm(sum(abs(U),2), Sys.nrm)-wr*norm(sum(abs(rho),2), Sys.nrm);
                 case 8
-                    obj = -wr*wt1*norm(rho(:,1), Sys.nrm)-wr*norm(sum(rho(:,2:end),2), Sys.nrm)+norm(sum(abs(U),2), Sys.nrm)
+                    obj = -wr*wt1*norm(rho(:,1), Sys.nrm)-wr*norm(sum(rho(:,2:end),2), Sys.nrm)+norm(sum(abs(U),2), Sys.nrm);
             end
         end
         
@@ -368,34 +368,22 @@ classdef STLC_lti < handle
            STLC_run_adversarial(Sys, controller, adversary)
         end
         
-        function rob = monitor(Sys,phi)
+        function rob = monitor(Sys,phi,enc)
            Sys.h = [];
+           col = ['r','b','g'];
            Sys.stl_list{1} = phi;
-           Sys.controller = get_controller(Sys,'robust');
+           Sys.controller = get_controller(Sys,enc);
            Sys.min_rob= -Sys.bigM;
            Sys = Sys.run_open_loop(Sys.controller);
            rob = Sys.model_data.rob;
            figure;
            hold on;
-           plot(Sys.model_data.time, Sys.model_data.W(:,1:end))
-           plot(Sys.model_data.time(1:size(rob,2)), rob, 'y', 'LineWidth',2);
-        
-        end
-        
-        function rob = monitor_interval(Sys,phi)
-           Sys.bigM = 1000; 
-           Sys.h = [];
-           Sys.stl_list{1} = phi;
-           Sys.controller = get_controller(Sys,'interval');
-           Sys.min_rob= -1000;
-           Sys = Sys.run_open_loop(Sys.controller);
-           rob = Sys.model_data.rob;
-           figure;
-           hold on;
-           plot(Sys.model_data.time, Sys.model_data.W(:,1:end))
-           plot(Sys.model_data.time(1:size(rob,2)), rob(1,:), 'b', 'LineWidth',2);
-           plot(Sys.model_data.time(1:size(rob,2)), rob(2,:), 'r', 'LineWidth',2);
-           
+           if strcmp(enc,'interval')
+               plot(Sys.model_data.time(1:size(rob,2)), rob(1,:), 'b', 'LineWidth',2);
+               plot(Sys.model_data.time(1:size(rob,2)), rob(2,:), 'r', 'LineWidth',2);
+           else
+               plot(Sys.model_data.time(1:size(rob,2)), rob(1,:), 'g', 'LineWidth',2);
+           end
         end
         
         % Default plot function
