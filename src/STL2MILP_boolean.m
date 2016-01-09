@@ -119,13 +119,12 @@ function [F,z] = pred(st,kList,var)
         st= [ '(' tokens{1}{1} ')-(' tokens{1}{2} ')' ];
     end
     
-    
     F = [];
-    zAll = [];
+    z = [];
     
     bigM = 1000;
-    bigMst1 = 'bigM*zAll(:,t)';
-    bigMst2 = 'bigM*(1 - zAll(:,t))';
+    bigMst1 = 'bigM*z(:,t)';
+    bigMst2 = 'bigM*(1 - z(:,t))';
   
     k = size(kList,2);
     
@@ -135,29 +134,20 @@ function [F,z] = pred(st,kList,var)
         t_st = regexprep(t_st,'\<t\>', num2str(kList(l)));
 
         % ADD VARIABLES
-        zl = sdpvar(size((t_st),1),1);
-        zAll = [zAll,zl];
+        zl = binvar(1,1);
+        z = [z,zl];
         
         % ADD CONSTRAINTS
         
-        bigM = regexprep(bigMst1,',t\)',[',',num2str(kList(l)) '\)']);
-        t_st1 = [t_st '<=' bigM];
+        bigM1 = regexprep(bigMst1,',t\)',[',',num2str(l) '\)']);
+        t_st1 = [t_st '<=' bigM1];
         F = [F, eval(t_st1)];
         
-        bigM = regexprep(bigMst2,',t\)',[',',num2str(kList(l)) '\)']);
-        t_st2 = ['-(' t_st ') <= ' bigM];
+        bigM2 = regexprep(bigMst2,',t\)',[',',num2str(l) '\)']);
+        t_st2 = ['-(' t_st ') <= ' bigM2];
         F = [F, eval(t_st2)];
         
     end
-    
-    % take the and over all dimension for multi-dimensional signals
-    %this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
-    z = sdpvar(1,k);
-    for i=1:k
-        [Fnew, z(:,i)] = and(zAll(:,i));
-        F = [F, Fnew];
-    end
-    
 end
 
 

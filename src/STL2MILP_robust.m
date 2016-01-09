@@ -100,7 +100,7 @@ function [F,P] = STL2MILP_robust(phi,kList,kMax,ts,var,M)
     end
 end
 
-function [F,zAll] = pred(st,kList,var,M)
+function [F,z] = pred(st,kList,var,M)
     % Enforce constraints based on predicates 
     % var is the variable dictionary    
         
@@ -121,29 +121,22 @@ function [F,zAll] = pred(st,kList,var,M)
     end
          
     F = [];
-    zAll = [];
+    z = [];
     
     k = size(kList,2);
     
     for l=1:k
+        
         t_st = st;
         t_st = regexprep(t_st,'\<t\>',num2str(kList(l)));
         try 
-            zl = eval(t_st);
+            z_eval = eval(t_st);
         end
-        zAll = [zAll,zl];
+        zl = sdpvar(1,1);
+        F = [F, zl <= z_eval];
+        z = [z,zl];
     end
-    
-    z = zAll;
-    
-    
-    %take the and over all dimension for multi-dimensional signals
-    %this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
-    z = sdpvar(1,k);
-    for i=1:k
-       [Fnew, z(:,i)] = and(zAll(:,i),M);
-       F = [F, Fnew];
-    end
+  
 end
 
 

@@ -134,7 +134,7 @@ function [F,z1,z2] = pred(st,kList,var,M)
     end
     
     F = [];
-    zAll = [];
+    z = [];
     
     k = size(kList,2);
     
@@ -142,21 +142,15 @@ function [F,z1,z2] = pred(st,kList,var,M)
         t_st = st;
         t_st = regexprep(t_st,'\<t\>', num2str(kList(l)));
         try 
-            z = eval(t_st);
+            z_eval = eval(t_st);
         end
-        zAll = [zAll, z];
+        zl = sdpvar(1,1);
+        F = [F, zl <= z_eval];
+        z = [z,zl];
     end
     
-    %take the and over all dimension for multi-dimensional signals
-    %this is needed for example in 'ev_[3,5] (Y(1:2,t) > [5;2])'
-    z = sdpvar(1,k);
-    for i=1:min(k,size(zAll,2))
-      [Fnew, z(:,i)] = and(zAll(:,i),zAll(:,i),M);
-      F = [F, Fnew];
-    end
-    
-    z1 = zAll;
-    z2 = zAll;
+    z1 = z;
+    z2 = z;
   
 end
 
