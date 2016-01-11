@@ -11,37 +11,14 @@ classdef signal_generator < STLC_lti
             Du = eye(nu);
             Dw = eye(nw);
             SG = SG@STLC_lti(A,B,[],C,Du,Dw);
-        
+            SG = init_control(SG);
         end
         
-        function rob = monitor(SG,phi)
-            SG.bigM = 1000;
-            SG.h = [];
-           SG.stl_list{1} = phi;
-           SG.controller = get_controller(SG,'robust');
-           SG.min_rob= -SG.bigM;
-           [SG,~,rob] = SG.run_open_loop(SG.controller);
-           figure;
-           hold on;
-           plot(SG.model_data.time, SG.model_data.W(:,1:end))
-           plot(SG.model_data.time, rob, 'k', 'LineWidth',2);
-        
+        function SG = init_control(SG)
+            SG.nrm = 1;
+            SG.lambda_rho = 1000;
+            SG.lambda_t1 = 100;
         end
-
-        function rob = monitor_interval(SG,phi)
-           SG.bigM = 1000; 
-           SG.h = [];
-           SG.stl_list{1} = phi;
-           SG.controller = get_controller(SG,'interval');
-           SG.min_rob= -1000;
-           [SG,~,rob] = SG.run_open_loop(SG.controller);
-           figure;
-           hold on;
-           plot(SG.model_data.time, SG.model_data.W(:,1:end))
-           plot(SG.model_data.time, rob, 'k', 'LineWidth',2);
-           
-        end
-
         
     end
     
