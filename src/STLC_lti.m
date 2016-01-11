@@ -374,8 +374,8 @@ classdef STLC_lti < handle
            Sys.h = [];
            col = ['r','b','g'];
            Sys.stl_list{1} = phi;
-           Sys.controller = get_controller(Sys,enc);
            Sys.min_rob= -Sys.bigM;
+           Sys.controller = get_controller(Sys,enc);
            Sys = Sys.run_open_loop(Sys.controller);
            rob = Sys.model_data.rob;
            figure;

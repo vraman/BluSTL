@@ -1,4 +1,4 @@
-classdef STLC_lti < handle
+classdef STLC_nlti < handle
     %STLC_nlti generic x' = f(x,u) system controller. Linearlized at each time step.
     
     % system properties
@@ -70,7 +70,7 @@ classdef STLC_lti < handle
     
     methods
         % Constructor
-        function Sys = STLC_lti(varargin)
+        function Sys = STLC_nlti(varargin)
             
             switch nargin
                 

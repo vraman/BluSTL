@@ -20,7 +20,7 @@ SG.lambda_rho = 100;
 
 SG.Wref = [ cos(SG.time) ; 0.0*cos(SG.time)+1.1;];
 
-phis= { '(w1(t)>0) or (w2(t)>0)', ...    
+phis= { '(w1(t)>3) or (w2(t)>3)', ...    
     'ev_[0,1.1] (w1(t)>0)', ...
     '((w1(t)>0)) or (ev_[0,1.1] (w1(t)>0))',...    
     'alw_[0,5] (w1(t)>0 )',...
@@ -31,8 +31,12 @@ phis= { '(w1(t)>0) or (w2(t)>0)', ...
     }; 
 
 
-for i = 2
+for i = 5
     phi = phis{i};
+
+    tic;
+    rob = monitor(SG, phi, 'boolean');
+    toc;
     
     tic;
     rob = monitor(SG, phi, 'robust');

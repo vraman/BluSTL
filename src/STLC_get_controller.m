@@ -77,7 +77,7 @@ for i = 1:numel(stl_list)
     switch enc
         case 'boolean'
             for j = 1:min(L, size(Pphi,2))
-                if p(j) > 0
+                if Sys.min_rob > 0
                     Fstl = [Fstl Pphi(:,j) == 1];
                 end
             end
