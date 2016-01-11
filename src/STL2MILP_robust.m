@@ -133,10 +133,9 @@ function [F,z] = pred(st,kList,var,M)
             z_eval = eval(t_st);
         end
         zl = sdpvar(1,1);
-        F = [F, zl <= z_eval];
+        F = [F, zl == z_eval];
         z = [z,zl];
     end
-  
 end
 
 

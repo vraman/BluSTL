@@ -1,4 +1,4 @@
-function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
+ function [F,P] = STL2MILP_boolean(phi,kList,kMax,ts,var,M)
 % STL2MILP_boolean  constructs MILP constraints in YALMIP that compute
 %                   the boolean satisfaction for specification phi
 %

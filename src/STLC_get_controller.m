@@ -64,7 +64,7 @@ for i = 1:numel(stl_list)
             [Fphi, Pphi] = STL2MILP_boolean(phi, [1:L], 2*L, ts, var,M); 
             Pstl = [Pstl; Pphi];
         case 'robust'
-            [Fphi, Pphi] = STL2MILP_robust(phi, [1:2*L], 2*L, ts, var,M);
+            [Fphi, Pphi] = STL2MILP_robust(phi, [1:L], 2*L, ts, var,M);
             Pstl = [Pstl; Pphi];
         case 'interval'
             [Fphi, Pphilow, Pphiup] = STL2MILP_robust_interval(phi, [1:2*L], 2*L, ts, var,M); 
@@ -77,7 +77,9 @@ for i = 1:numel(stl_list)
     switch enc
         case 'boolean'
             for j = 1:min(L, size(Pphi,2))
-                Fstl = [Fstl Pphi(:,j) == 1]; % TODO this is specific to alw (phi), what about ev, until...
+                if p(j) > 0
+                    Fstl = [Fstl Pphi(:,j) == 1];
+                end
             end
         case 'robust'
             for j = 1:min(L, size(Pphi,2))
@@ -171,7 +173,7 @@ end
 %% Objective function
 switch enc
     case 'boolean'
-        obj = get_objective(Sys,X,Y,U,W);
+        obj = get_objective(Sys,X,Y,U);
     case 'robust'
         obj = get_objective(Sys,X,Y,U,W, Pstl(:,1:L-1), Sys.lambda_rho);
     case 'interval'
