@@ -38,14 +38,14 @@ classdef hvac_room <STLC_lti
             %% Controller Initialisation
             % Time
             HR.time = 0:10:1439; % time for the dynamics
-            HR.ts=20; % sampling time for controller
+            HR.ts=30; % sampling time for controller
             HR.L=L;  % horizon (# of steps)
-            HR.nb_stages=1; % repeats time
+            HR.nb_stages=3; % repeats time
             
             HR.max_react_iter=100;
             HR.min_rob = .1;
             HR.lambda_rho = lambda_rho;
-            HR.bigM = 10000;
+            HR.bigM = 1000;
             
             % Input constraints
             HR.u_lb=0;
@@ -68,7 +68,7 @@ classdef hvac_room <STLC_lti
             HR.x0 = X0;
             
             %% STL formula
-            HR.stl_list{1} = 'alw_[0, Inf] ((1000*occ(t) > 0) => (Troom(t) > Tcomf_low(t)))';
+            HR.stl_list{1} = 'alw_[0, Inf] ((100*occ(t) > 0) => (Troom(t) > Tcomf_low(t)))';
             %          HR.stl_list{2} = 'alw_[0, Inf] ( X(5,t)> 67)';
             
             %% Plotting
